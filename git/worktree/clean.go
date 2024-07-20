@@ -16,7 +16,7 @@ func IndexClean(dir string) (ok bool, err error) {
 
 func workTreeClean(dir string, index bool) (bool, error) {
 	// 0: clean, 1: not clean
-	args := []string{"diff", "--exit-cide", "--quiet"}
+	args := []string{"diff", "--exit-code", "--quiet"}
 	if index {
 		args = append(args, "--cached")
 	}
