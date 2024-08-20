@@ -1,5 +1,5 @@
 # gitops
-This repo contains git operations implemented using command `exec`.
+This repo contains git operations implemented using command `git`.
 
 Its intial purepose is to power the [xgo](https://github.com/xhd2015/xgo)'s incremental coverage tool.
 
