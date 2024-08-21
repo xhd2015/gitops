@@ -75,28 +75,66 @@ func splitBatch(refs []string, batch int) [][]string {
 	return batches
 }
 
+type GetCommitsOptions struct {
+	Optional bool
+}
+
 // GetCommits get commits info by refs, the result is a mapping by ref name
-func GetCommits(dir string, refs []string) (map[string]*model.Commit, error) {
+func GetCommits(dir string, refs []string, opts ...GetCommitsOptions) (map[string]*model.Commit, error) {
 	if len(refs) == 0 {
 		return nil, nil
 	}
+	var optional bool
+	for _, opt := range opts {
+		if opt.Optional {
+			optional = true
+		}
+	}
+
 	mappingByRef := make(map[string]*model.Commit, len(refs))
-	batches := splitBatch(refs, 100)
+	var verifiedRefs []string
+	if !optional {
+		verifiedRefs = refs
+	} else {
+		verifiedRefs = make([]string, 0, len(refs))
+		for _, ref := range refs {
+			_, revErr := revParseVerified(dir, ref)
+			if revErr != nil {
+				if revErr == ErrNotExists {
+					mappingByRef[ref] = &model.Commit{
+						NotFound: true,
+					}
+					continue
+				}
+				return nil, revErr
+			}
+			verifiedRefs = append(verifiedRefs, ref)
+		}
+	}
+	batches := splitBatch(verifiedRefs, 100)
 	for _, batchRefs := range batches {
 		cmds := make([]string, 0, len(batchRefs))
 		for _, ref := range batchRefs {
 			cmds = append(cmds, fmt.Sprintf("git log -1 --format=%s %s", makeCommitFormat(true), sh.Quote(ref)))
 		}
 		res, err := RunCommands(dir, cmds...)
-		convertBatchErr := func(err error) error {
-			for _, ref := range batchRefs {
-				_, revErr := revParseVerified(dir, ref)
-				if revErr == ErrNotExists {
-					return fmt.Errorf("%s does not exist or has been deleted", trimRef(ref))
+		var convertBatchErr func(err error) error
+		if !optional {
+			convertBatchErr = func(err error) error {
+				for _, ref := range batchRefs {
+					_, revErr := revParseVerified(dir, ref)
+					if revErr == ErrNotExists {
+						return fmt.Errorf("%s does not exist or has been deleted", trimRef(ref))
+					}
 				}
+				return err
 			}
-			return err
+		} else {
+			convertBatchErr = func(err error) error {
+				return err
+			}
 		}
+
 		if err != nil {
 			return nil, convertBatchErr(err)
 		}

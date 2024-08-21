@@ -22,3 +22,27 @@ func SearchBranchesContainingRef(dir string, ref string) ([]string, error) {
 	}
 	return splitLinesFilterEmpty(output), nil
 }
+
+func GetBranchesHoldingRef(dir string, ref string) ([]string, error) {
+	if ref == "" {
+		return nil, fmt.Errorf("requires ref")
+	}
+
+	// resolve possible branches
+	branches, err := SearchBranchesContainingRef(dir, ref)
+	if err != nil {
+		return nil, err
+	}
+	var possibleBranches []string
+	for _, branch := range branches {
+		ok, err := IsFirstParentReachable(dir, ref, branch)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			continue
+		}
+		possibleBranches = append(possibleBranches, branch)
+	}
+	return possibleBranches, nil
+}

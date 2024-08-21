@@ -9,6 +9,9 @@ type Commit struct {
 	CommitTimestamp int64  `json:"commitTimestamp"`
 	Tag             string `json:"tag"`
 
+	// NotFound indicates the commit is missing
+	NotFound bool `json:"notFound"`
+
 	// optional
 	FirstParent  string `json:"firstParent"`
 	SecondParent string `json:"secondParent"`
