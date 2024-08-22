@@ -52,8 +52,8 @@ func AddWorkTree(srcDir string, ref string, targetDir string) (remove func() err
 		return nil, fmt.Errorf("requires targetDir")
 	}
 
-	// NOTE: remove -f can fail
-	err = cmd.Dir(srcDir).Stderr(io.Discard).Stdout(io.Discard).Run("git", "worktree", "remove", "-f", targetDir)
+	// remove existing worktree
+	err = ForceRemoveWorktree(srcDir, targetDir)
 	if err != nil {
 		return
 	}
