@@ -19,6 +19,9 @@ func workTreeClean(dir string, index bool) (bool, error) {
 	args := []string{"diff", "--exit-code", "--quiet"}
 	if index {
 		args = append(args, "--cached")
+	} else {
+		// compare HEAD with working tree
+		args = append(args, "HEAD")
 	}
 
 	// exit code: 0=clean, 1=not clean
