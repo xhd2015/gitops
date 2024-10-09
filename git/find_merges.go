@@ -155,8 +155,16 @@ func doFindMergePoints(dir string, ref string, base string, refName string, base
 	}
 	firstRefCommit := refCommits[len(refCommits)-1]
 	var firstRefCommitParent string
-	firstRefCommitParent, err = RevParseVerified(dir, firstRefCommit+"^1")
+	firstRefCommitParent, err = revParseVerified(dir, firstRefCommit+"^1")
 	if err != nil {
+		if err == ErrNotExists {
+			// see https://github.com/xhd2015/gitops/issues/3
+			// this error means ref has no intersection with base,
+			// which means merge commit list is empty
+			err = nil
+			// TODO: return a dedicated error
+			return
+		}
 		return
 	}
 	var firstIsAncestor bool
@@ -165,6 +173,7 @@ func doFindMergePoints(dir string, ref string, base string, refName string, base
 		return
 	}
 	if !firstIsAncestor {
+		// TODO: return a dedicated error
 		err = fmt.Errorf("%s seems does not branch from %s, the starting point is %s", trimRef(refName), trimRef(base), firstRefCommitParent)
 		return
 	}
