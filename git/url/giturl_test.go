@@ -69,15 +69,22 @@ func TestSplitRepo(t *testing.T) {
 			Path:    "/a",
 		},
 		{
-			Name:      "ssh with port",
+			Name:      "ssh with num port",
+			RepoURL:   "gitlab@aaa.com:2234/a.git",
+			Domain:    "aaa.com:2234",
+			Path:      "/a",
+			ExpectErr: "",
+		},
+		{
+			Name:      "ssh with empty port, has slash",
 			RepoURL:   "gitlab@aaa.com:/a.git",
 			Domain:    "aaa.com",
 			Path:      "/a",
 			ExpectErr: "",
 		},
 		{
-			Name:      "ssh with port, no slash",
-			RepoURL:   "gitlab@aaa.com:a.git",
+			Name:      "ssh with empty port",
+			RepoURL:   "gitlab@aaa.com:/a.git",
 			Domain:    "aaa.com",
 			Path:      "/a",
 			ExpectErr: "",
@@ -120,7 +127,7 @@ func TestSplitRepo(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		t.Logf(">>>>>>>>>>\nRUN  case[%d]: %s", i, testCase.Name)
+		t.Logf(">>>>>>>>>>\nRUN  case[%d]: %s -> %s", i, testCase.Name, testCase.RepoURL)
 
 		domain, path, err := SplitRepoURL(testCase.RepoURL)
 		if testCase.ExpectErr != "" {
