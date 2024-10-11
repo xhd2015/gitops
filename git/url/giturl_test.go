@@ -77,9 +77,9 @@ func TestSplitRepo(t *testing.T) {
 		},
 		{
 			Name:      "ssh with empty port, has slash",
-			RepoURL:   "gitlab@aaa.com:/a.git",
+			RepoURL:   "gitlab@aaa.com:a/b.git",
 			Domain:    "aaa.com",
-			Path:      "/a",
+			Path:      "/a/b",
 			ExpectErr: "",
 		},
 		{
