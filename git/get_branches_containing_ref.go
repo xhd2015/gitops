@@ -33,24 +33,7 @@ func GetBranchesContainingRef(dir string, ref string) (branches []string, err er
 		return nil, err
 	}
 
-	var candidates []string
-	lines := splitLinesFilterEmpty(output)
-	seen := make(map[string]bool, len(lines))
-	for _, line := range lines {
-		if !strings.HasPrefix(line, REFS_REMOTES_ORIGIN_PREFIX) {
-			continue
-		}
-		branch := line[len(REFS_REMOTES_ORIGIN_PREFIX):]
-		if branch == "HEAD" {
-			continue
-		}
-		if seen[branch] {
-			continue
-		}
-		seen[branch] = true
-		candidates = append(candidates, branch)
-	}
-
+	candidates := TrimRefsAsBranches(splitLinesFilterEmpty(output))
 	for _, candidate := range candidates {
 		isAncestor, err := IsFirstParentAncestorOf(dir, REFS_REMOTES_ORIGIN_PREFIX+candidate, ref)
 		if err != nil {
@@ -62,4 +45,32 @@ func GetBranchesContainingRef(dir string, ref string) (branches []string, err er
 		branches = append(branches, candidate)
 	}
 	return branches, nil
+}
+
+func TrimRefAsBranch(ref string) string {
+	if !strings.HasPrefix(ref, REFS_REMOTES_ORIGIN_PREFIX) {
+		return ""
+	}
+	branch := ref[len(REFS_REMOTES_ORIGIN_PREFIX):]
+	if branch == "HEAD" {
+		return ""
+	}
+	return branch
+}
+
+func TrimRefsAsBranches(refs []string) []string {
+	branches := make([]string, 0, len(refs))
+	seen := make(map[string]bool, len(refs))
+	for _, line := range refs {
+		branch := TrimRefAsBranch(line)
+		if branch == "" {
+			continue
+		}
+		if seen[branch] {
+			continue
+		}
+		seen[branch] = true
+		branches = append(branches, branch)
+	}
+	return branches
 }
