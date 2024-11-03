@@ -8,9 +8,107 @@ import (
 	"github.com/xhd2015/go-inspect/sh"
 )
 
+func DiffCommitFiles(dir string, ref string, compareRef string, options *model.DiffCommitOptions) (map[string]*model.FileDetail, error) {
+	if ref == "" {
+		return nil, fmt.Errorf("requires ref")
+	}
+	if compareRef == "" {
+		return nil, fmt.Errorf("requires compareRef")
+	}
+	if compareRef == COMMIT_WORKING {
+		return nil, fmt.Errorf("compareRef cannot be WORKING commit")
+	}
+	var patterns []string
+	if options != nil {
+		patterns = options.PathPatterns
+	}
+	allNewFiles, err := ListFilePatterns(dir, ref, patterns)
+	if err != nil {
+		return nil, err
+	}
+	allOldFiles, err := ListFilePatterns(dir, compareRef, patterns)
+	if err != nil {
+		return nil, err
+	}
+	addedFiles, err := ListAddedFile(dir, ref, compareRef, patterns)
+	if err != nil {
+		return nil, err
+	}
+	modifiedFiles, err := ListModifiedFiles(dir, ref, compareRef, patterns)
+	if err != nil {
+		return nil, err
+	}
+	renamedFiles, err := ListRenamedFiles(dir, ref, compareRef, patterns)
+	if err != nil {
+		return nil, err
+	}
+	var untrackedFiles []string
+	if ref == COMMIT_WORKING {
+		untrackedFiles, err = ListUntrackedFiles(dir, compareRef, patterns)
+		if err != nil {
+			return nil, err
+		}
+	}
+	fileDetailsMap := make(map[string]*model.FileDetail, len(allNewFiles))
+	for _, file := range allNewFiles {
+		fileDetailsMap[file] = &model.FileDetail{}
+	}
+	for _, file := range allOldFiles {
+		_, ok := fileDetailsMap[file]
+		if !ok {
+			// deleted files has two type of changes:
+			// 1.deleted
+			// 2.renamed to another file
+			// an example:
+			//   HEAD:   ab.txt
+			// HEAD~1:   a.txt b.txt
+			// results:  ab.txt: renamedFrom=a.txt,contentChanged=true
+			//           a.txt:  deleted = true
+			//           b.txt:  deleted = true
+			fileDetailsMap[file] = &model.FileDetail{
+				Deleted: true, // it may be renmaed also
+			}
+		}
+	}
+	// add untracked files
+	for _, file := range untrackedFiles {
+		fd := fileDetailsMap[file]
+		if fd != nil {
+			if fd.Deleted {
+				// untracked file in allOld, mark as update
+				fd.Deleted = false
+				fd.ContentChanged = true
+				continue
+			}
+			// untracked file in allNewFiles
+			fd.IsNew = true
+			continue
+		}
+		// neither in allNew nor allOld, mark as new
+		fileDetailsMap[file] = &model.FileDetail{
+			IsNew: true,
+		}
+	}
+
+	for _, file := range addedFiles {
+		fileDetailsMap[file].IsNew = true
+	}
+	// NOTE: this only contains un-renamed updates
+	for _, file := range modifiedFiles {
+		fileDetailsMap[file].ContentChanged = true
+	}
+
+	for _, rf := range renamedFiles {
+		d := fileDetailsMap[rf.File]
+		d.RenamedFrom = rf.RenameFrom
+		d.ContentChanged = d.ContentChanged || rf.Percent != "100%"
+	}
+	return fileDetailsMap, nil
+}
+
 // DiffCommit finds file changes between two commits
+// Deprecated: use DiffCommitFiles
 func DiffCommit(dir string, ref string, compareRef string, options *model.DiffCommitOptions) (fileDetailsMap map[string]*model.FileDetail, err error) {
-	type FileDetail = model.FileDetail
 	if ref == "" {
 		err = fmt.Errorf("requires ref")
 		return
@@ -158,9 +256,9 @@ func DiffCommit(dir string, ref string, compareRef string, options *model.DiffCo
 		}
 	}
 
-	fileDetailsMap = make(map[string]*FileDetail, len(allNewFiles))
+	fileDetailsMap = make(map[string]*model.FileDetail, len(allNewFiles))
 	for _, file := range allNewFiles {
-		fileDetailsMap[file] = &FileDetail{}
+		fileDetailsMap[file] = &model.FileDetail{}
 	}
 	for _, file := range allOldFiles {
 		_, ok := fileDetailsMap[file]
@@ -174,7 +272,7 @@ func DiffCommit(dir string, ref string, compareRef string, options *model.DiffCo
 			// results:  ab.txt: renamedFrom=a.txt,contentChanged=true
 			//           a.txt:  deleted = true
 			//           b.txt:  deleted = true
-			fileDetailsMap[file] = &FileDetail{
+			fileDetailsMap[file] = &model.FileDetail{
 				Deleted: true, // it may be renmaed also
 			}
 		}
@@ -194,7 +292,7 @@ func DiffCommit(dir string, ref string, compareRef string, options *model.DiffCo
 			continue
 		}
 		// neither in allNew nor allOld, mark as new
-		fileDetailsMap[file] = &FileDetail{
+		fileDetailsMap[file] = &model.FileDetail{
 			IsNew: true,
 		}
 	}
@@ -207,9 +305,6 @@ func DiffCommit(dir string, ref string, compareRef string, options *model.DiffCo
 		fileDetailsMap[file].ContentChanged = true
 	}
 
-	// check renames and updates
-	// iterate for each 'rename ' at line begin
-	// do not consider filename containing newline,"{" and "}", and space in the end or start
 	parseRenames(renamedFilesWithSummaryGroup, func(newFile, oldFile, percent string) {
 		d := fileDetailsMap[newFile]
 
@@ -220,6 +315,9 @@ func DiffCommit(dir string, ref string, compareRef string, options *model.DiffCo
 	return
 }
 
+// check renames and updates
+// iterate for each 'rename ' at line begin
+// do not consider filename containing newline,"{" and "}", and space in the end or start
 func parseRenames(renamedFilesWithSummary string, fn func(newFile string, oldFile string, percent string)) {
 	renames := splitLinesFilterEmpty(renamedFilesWithSummary)
 	for _, line := range renames {

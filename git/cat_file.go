@@ -2,7 +2,6 @@ package git
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -23,10 +22,6 @@ func MustCatFile(dir string, ref string, file string) (content string, err error
 	return
 }
 func CatFile(dir string, ref string, file string) (ok bool, content string, err error) {
-	if dir == "" {
-		err = fmt.Errorf("requires dir")
-		return
-	}
 	if ref == "" {
 		err = fmt.Errorf("requires ref")
 		return
@@ -36,7 +31,7 @@ func CatFile(dir string, ref string, file string) (ok bool, content string, err 
 		return
 	}
 	if ref == COMMIT_WORKING {
-		contentBytes, fileErr := ioutil.ReadFile(path.Join(dir, file))
+		contentBytes, fileErr := os.ReadFile(path.Join(dir, file))
 		if fileErr != nil {
 			if os.IsNotExist(fileErr) {
 				return
@@ -44,6 +39,7 @@ func CatFile(dir string, ref string, file string) (ok bool, content string, err 
 			err = fileErr
 			return
 		}
+		ok = true
 		content = string(contentBytes)
 		return
 	}
