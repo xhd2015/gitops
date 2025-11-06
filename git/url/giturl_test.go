@@ -124,6 +124,20 @@ func TestSplitRepo(t *testing.T) {
 			Path:      "/sp/some-service/fe/merch_loan/h5",
 			ExpectErr: "unrecognized repoURL",
 		},
+		{
+			Name:      "ssh without password and port",
+			RepoURL:   "ssh://gitlab@some.git.com/path/to/project",
+			Domain:    "some.git.com",
+			Path:      "/path/to/project",
+			ExpectErr: "",
+		},
+		{
+			Name:      "ssh without password but with port",
+			RepoURL:   "ssh://gitlab@some.git.com:2222/path/to/project",
+			Domain:    "some.git.com:2222",
+			Path:      "/path/to/project",
+			ExpectErr: "",
+		},
 	}
 
 	for i, testCase := range testCases {
@@ -136,17 +150,20 @@ func TestSplitRepo(t *testing.T) {
 				errMsg = err.Error()
 			}
 			if !strings.Contains(errMsg, testCase.ExpectErr) {
-				t.Fatalf("case[%d] call expect err:%v, actual:%v", i, testCase.ExpectErr, errMsg)
+				t.Errorf("FAIL case[%d] call expect err:%v, actual:%v", i, testCase.ExpectErr, errMsg)
+				continue
 			}
 			t.Logf("PASS case[%d]: %s", i, testCase.Name)
 			continue
 		}
 
 		if domain != testCase.Domain {
-			t.Fatalf("expect %s = %+v, actual:%+v", `domain`, testCase.Domain, domain)
+			t.Errorf("FAIL expect %s = %+v, actual:%+v", `domain`, testCase.Domain, domain)
+			continue
 		}
 		if path != testCase.Path {
-			t.Fatalf("expect %s = %+v, actual:%+v", `path`, testCase.Path, path)
+			t.Errorf("FAIL expect %s = %+v, actual:%+v", `path`, testCase.Path, path)
+			continue
 		}
 
 		t.Logf("PASS case[%d]: %s", i, testCase.Name)

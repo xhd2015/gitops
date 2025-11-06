@@ -40,6 +40,30 @@ func SplitRepoURL(repoURL string) (domain string, path string, err error) {
 			}
 			return
 		}
+		// e.g. ssh://gitlab@some.git.com/path/to/project
+		if strings.HasPrefix(repoURL, "ssh://") {
+			// optional password
+			userDomainProject := strings.TrimPrefix(repoURL, "ssh://")
+
+			atIdx := strings.Index(userDomainProject, "@")
+			if atIdx >= 0 {
+				user := userDomainProject[:atIdx]
+				domainProject := userDomainProject[atIdx+1:]
+				if user != "" && domainProject != "" {
+					slashIdx := strings.Index(domainProject, "/")
+					if slashIdx >= 0 {
+
+						beforeSlash := domainProject[:slashIdx]
+						afterSlash := domainProject[slashIdx+1:]
+						if beforeSlash != "" && afterSlash != "" {
+							domain = beforeSlash
+							path = "/" + afterSlash
+							return
+						}
+					}
+				}
+			}
+		}
 	}
 	err = fmt.Errorf("unrecognized repoURL")
 	return
