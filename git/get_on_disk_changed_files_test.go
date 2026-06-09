@@ -251,3 +251,244 @@ func TestGetOnDiskChangedFiles_MultipleModified(t *testing.T) {
 	}
 	assertFilesEqual(t, files, []string{"a.go", "b.go", "c.go"})
 }
+
+func TestGetOnDiskChangedFiles_CompareWith_ModifiedSinceCommit(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "clean.go", "original")
+	gitAddA(dir)
+	gitCommit(dir, "second commit")
+
+	writeFile(dir, "mod.go", "package main\nimport \"flag\"\nfunc main() { flag.Parse() }\n")
+	writeFile(dir, "clean.go", "modified")
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("HEAD"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, []string{"mod.go", "clean.go"})
+}
+
+func TestGetOnDiskChangedFiles_CompareWith_NoChanges(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "clean.go", "original")
+	gitAddA(dir)
+	gitCommit(dir, "second commit")
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("HEAD"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, nil)
+}
+
+func TestGetOnDiskChangedFiles_CompareWith_OlderCommit(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "a.go", "package a\n")
+	gitAddA(dir)
+	gitCommit(dir, "add a.go")
+
+	writeFile(dir, "b.go", "package b\n")
+	gitAddA(dir)
+	gitCommit(dir, "add b.go")
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("HEAD~1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, []string{"b.go"})
+}
+
+func TestGetOnDiskChangedFiles_CompareWith_InvalidRef(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	_, err := GetOnDiskChangedFiles(dir, CompareWith("nonexistent123"))
+	if err == nil {
+		t.Fatal("expected error for invalid ref")
+	}
+}
+
+func TestGetOnDiskChangedFiles_CompareWith_ExcludesDeleted(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "a.go", "package main\n")
+	gitAddA(dir)
+	gitCommit(dir, "add a.go")
+
+	if err := os.Remove(filepath.Join(dir, "a.go")); err != nil {
+		t.Fatal(err)
+	}
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("HEAD"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, nil)
+}
+
+func TestGetOnDiskChangedFiles_CompareWith_StagedChanges(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "mod.go", "original")
+	gitAddA(dir)
+	gitCommit(dir, "commit mod.go")
+
+	writeFile(dir, "mod.go", "modified")
+	gitAdd(dir, "mod.go")
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("HEAD"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, []string{"mod.go"})
+}
+
+func TestGetOnDiskChangedFiles_CompareWith_UntrackedFile(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("HEAD"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, nil)
+
+	writeFile(dir, "new.go", "package main\n")
+
+	files, err = GetOnDiskChangedFiles(dir, CompareWith("HEAD"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, []string{"new.go"})
+}
+
+func TestGetOnDiskChangedFiles_CompareWith_RenamedFile(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "old.go", "package main\n")
+	gitAddA(dir)
+	gitCommit(dir, "commit old.go")
+
+	if err := cmd.Dir(dir).Run("git", "mv", "old.go", "new.go"); err != nil {
+		t.Fatal(err)
+	}
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("HEAD"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, []string{"new.go"})
+}
+
+func TestGetOnDiskChangedFiles_CompareWith_MixedChanges(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "mod.go", "original")
+	writeFile(dir, "del.go", "original")
+	gitAddA(dir)
+	gitCommit(dir, "add files")
+
+	writeFile(dir, "mod.go", "modified")
+	if err := os.Remove(filepath.Join(dir, "del.go")); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(dir, "untracked.go", "package main\n")
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("HEAD"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, []string{"mod.go", "untracked.go"})
+}
+
+func TestGetOnDiskChangedFiles_CompareWith_NoDiffBetweenCleanCommits(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "a.go", "package main\n")
+	gitAddA(dir)
+	gitCommit(dir, "add a.go")
+
+	if err := cmd.Dir(dir).Run("git", "-c", "user.email=test@test.com", "-c", "user.name=test", "commit", "--allow-empty", "-m", "empty commit"); err != nil {
+		t.Fatal(err)
+	}
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("HEAD~1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, nil)
+}
+
+func TestGetOnDiskChangedFiles_CompareWith_BranchName(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("master"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, nil)
+}
+
+func TestGetOnDiskChangedFiles_ResolvePathsToFiles_UntrackedDir(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	subDir := filepath.Join(dir, "view")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(dir, "view/a.go", "package view\n")
+	writeFile(dir, "view/b.go", "package view\n")
+
+	files, err := GetOnDiskChangedFiles(dir, ResolvePathsToFiles())
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, []string{"view/a.go", "view/b.go"})
+}
+
+func TestGetOnDiskChangedFiles_ResolvePathsToFiles_OnlyFiles(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "new.go", "package main\n")
+
+	files, err := GetOnDiskChangedFiles(dir, ResolvePathsToFiles())
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, []string{"new.go"})
+}
+
+func TestGetOnDiskChangedFiles_ResolvePathsToFiles_WithCompareWith(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "clean.go", "original")
+	gitAddA(dir)
+	gitCommit(dir, "second commit")
+
+	subDir := filepath.Join(dir, "view")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(dir, "view/a.go", "package view\n")
+
+	files, err := GetOnDiskChangedFiles(dir, CompareWith("HEAD"), ResolvePathsToFiles())
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertFilesEqual(t, files, []string{"view/a.go"})
+}

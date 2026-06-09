@@ -1,12 +1,74 @@
 package git
 
 import (
+	"io/fs"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/xhd2015/xgo/support/cmd"
 )
 
-func GetOnDiskChangedFiles(dir string) ([]string, error) {
+type onDiskChangedFileOption interface {
+	applyOnDiskChangedFileOptions(*onDiskChangedFileOptionsConfig)
+}
+
+type onDiskChangedFileOptionsConfig struct {
+	compareWith        string
+	resolvePathsToFiles bool
+}
+
+type CompareWithOption struct {
+	Commit string
+}
+
+func (c CompareWithOption) applyOnDiskChangedFileOptions(o *onDiskChangedFileOptionsConfig) {
+	o.compareWith = c.Commit
+}
+
+func CompareWith(commit string) CompareWithOption {
+	return CompareWithOption{Commit: commit}
+}
+
+type ResolvePathsToFilesOption struct{}
+
+func (ResolvePathsToFilesOption) applyOnDiskChangedFileOptions(o *onDiskChangedFileOptionsConfig) {
+	o.resolvePathsToFiles = true
+}
+
+func ResolvePathsToFiles() ResolvePathsToFilesOption {
+	return ResolvePathsToFilesOption{}
+}
+
+func GetOnDiskChangedFiles(dir string, opts ...onDiskChangedFileOption) ([]string, error) {
+	var cfg onDiskChangedFileOptionsConfig
+	for _, opt := range opts {
+		opt.applyOnDiskChangedFileOptions(&cfg)
+	}
+
+	var result []string
+	var err error
+
+	if cfg.compareWith != "" {
+		result, err = getChangedFilesAgainst(dir, cfg.compareWith)
+	} else {
+		result, err = getStatusFiles(dir)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.resolvePathsToFiles && len(result) > 0 {
+		result, err = expandDirsToFiles(dir, result)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return result, nil
+}
+
+func getStatusFiles(dir string) ([]string, error) {
 	output, err := cmd.Dir(dir).Output("git", "status", "--porcelain")
 	if err != nil {
 		return nil, err
@@ -45,6 +107,63 @@ func GetOnDiskChangedFiles(dir string) ([]string, error) {
 	}
 	if result == nil {
 		return nil, nil
+	}
+	return result, nil
+}
+
+func expandDirsToFiles(dir string, paths []string) ([]string, error) {
+	seen := make(map[string]bool, len(paths))
+	var result []string
+	for _, p := range paths {
+		abs := filepath.Join(dir, p)
+		info, err := os.Stat(abs)
+		if err != nil {
+			continue
+		}
+		if info.IsDir() {
+			filepath.WalkDir(abs, func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return nil
+				}
+				if d.IsDir() {
+					return nil
+				}
+				rel, err := filepath.Rel(dir, path)
+				if err != nil {
+					return nil
+				}
+				if seen[rel] {
+					return nil
+				}
+				seen[rel] = true
+				result = append(result, rel)
+				return nil
+			})
+		} else {
+			if seen[p] {
+				continue
+			}
+			seen[p] = true
+			result = append(result, p)
+		}
+	}
+	if result == nil {
+		return nil, nil
+	}
+	return result, nil
+}
+
+func getChangedFilesAgainst(dir string, compareCommit string) ([]string, error) {
+	fileDetails, err := DiffCommitFiles(dir, COMMIT_WORKING, compareCommit, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result []string
+	for file, detail := range fileDetails {
+		if detail.Deleted || detail.Unchanged() {
+			continue
+		}
+		result = append(result, file)
 	}
 	return result, nil
 }
