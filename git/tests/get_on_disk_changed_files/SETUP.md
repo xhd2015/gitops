@@ -13,6 +13,11 @@
 - The `Request.Dir` field is set to the temp repo path automatically by Setup
 
 ```go
+import (
+	"os"
+	"os/exec"
+)
+
 type Request struct {
 	Dir          string
 	CompareWith  string // empty string means no compare
@@ -21,5 +26,20 @@ type Request struct {
 
 type Response struct {
 	Files []string
+}
+
+func Setup(t *testing.T, req *Request) error {
+	dir, err := os.MkdirTemp("", "gittest")
+	if err != nil {
+		return err
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	exec.Command("git", "-C", dir, "init").Run()
+	exec.Command("git", "-C", dir, "branch", "-M", "master").Run()
+	os.WriteFile(dir+"/README.md", []byte("test"), 0644)
+	exec.Command("git", "-C", dir, "add", ".").Run()
+	exec.Command("git", "-C", dir, "commit", "-m", "initial commit").Run()
+	req.Dir = dir
+	return nil
 }
 ```

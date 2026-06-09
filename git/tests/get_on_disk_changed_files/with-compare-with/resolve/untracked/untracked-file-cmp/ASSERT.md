@@ -1,13 +1,23 @@
 ## Expected
-- Result contains `new.go`
+- Result contains `_utnew.go` (from parent untracked setup) and `new.go`
 
 ```go
 func Assert(t *testing.T, req *Request, resp *Response, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(resp.Files) != 1 || resp.Files[0] != "new.go" {
-		t.Fatalf("expected [new.go], got: %v", resp.Files)
+	found := make(map[string]bool)
+	for _, f := range resp.Files {
+		found[f] = true
+	}
+	if !found["_utnew.go"] {
+		t.Fatalf("expected _utnew.go in result, got: %v", resp.Files)
+	}
+	if !found["new.go"] {
+		t.Fatalf("expected new.go in result, got: %v", resp.Files)
+	}
+	if len(resp.Files) != 2 {
+		t.Fatalf("expected exactly 2 files, got %d: %v", len(resp.Files), resp.Files)
 	}
 }
 ```

@@ -2,4 +2,24 @@
 - No changed files exist on disk (or all changes are filtered out)
 
 ## Steps
-1. Set up state where no entries survive the filter (specified by leaf SETUP.md)
+1. Create `_keep.go` tracked file to establish shared context
+
+```go
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+)
+
+func Setup(t *testing.T, req *Request) error {
+	dir := req.Dir
+	p := filepath.Join(dir, "_keep.go")
+	if err := os.WriteFile(p, []byte("package main"), 0644); err != nil {
+		return err
+	}
+	if err := exec.Command("git", "-C", dir, "add", "_keep.go").Run(); err != nil {
+		return err
+	}
+	return exec.Command("git", "-C", dir, "commit", "-m", "add _keep.go").Run()
+}
+```

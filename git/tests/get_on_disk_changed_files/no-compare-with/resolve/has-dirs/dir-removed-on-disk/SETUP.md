@@ -1,6 +1,21 @@
 ## Steps
-(Note: This is an edge case that may be hard to reproduce reliably in a unit test.
-The scenario is: git status returns a directory entry, but between that call and expandDirsToFiles,
-the directory is deleted by another process. expandDirsToFiles should handle the os.Stat error gracefully.)
+1. Create `_removed/` directory, then delete it from disk to simulate dir removed between status and expand
 
-1. No additional setup needed.
+```go
+import (
+	"os"
+	"path/filepath"
+)
+
+func Setup(t *testing.T, req *Request) error {
+	dir := req.Dir
+	rdir := filepath.Join(dir, "_removed")
+	if err := os.MkdirAll(rdir, 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(rdir, "f.go"), []byte("package main"), 0644); err != nil {
+		return err
+	}
+	return os.RemoveAll(rdir)
+}
+```

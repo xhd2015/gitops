@@ -1,14 +1,23 @@
 ## Expected
-- Result contains `view/a.go` (DiffCommitFiles returns individual files, not dirs)
-- CompareWith path produces file-level output, not directory entries
+- Result contains `_utnew.go` (from parent untracked setup) and `view/a.go`
 
 ```go
 func Assert(t *testing.T, req *Request, resp *Response, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(resp.Files) != 1 || resp.Files[0] != "view/a.go" {
-		t.Fatalf("expected [view/a.go], got: %v", resp.Files)
+	found := make(map[string]bool)
+	for _, f := range resp.Files {
+		found[f] = true
+	}
+	if !found["_utnew.go"] {
+		t.Fatalf("expected _utnew.go in result, got: %v", resp.Files)
+	}
+	if !found["view/a.go"] {
+		t.Fatalf("expected view/a.go in result, got: %v", resp.Files)
+	}
+	if len(resp.Files) != 2 {
+		t.Fatalf("expected exactly 2 files, got %d: %v", len(resp.Files), resp.Files)
 	}
 }
 ```
