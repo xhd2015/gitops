@@ -1,5 +1,5 @@
 ## Expected
-- Result contains `_base/base.go` (from parent has-dirs setup) and `view/a.go`
+- Result contains `.gitignore` (untracked file), `_base/base.go` (from parent has-dirs setup), and `view/a.go`
 - `view/build/output.js` is excluded because `build/` is in `.gitignore`
 
 ```go
@@ -11,6 +11,9 @@ func Assert(t *testing.T, req *Request, resp *Response, err error) {
 	for _, f := range resp.Files {
 		found[f] = true
 	}
+	if !found[".gitignore"] {
+		t.Fatalf("expected .gitignore in result, got: %v", resp.Files)
+	}
 	if !found["_base/base.go"] {
 		t.Fatalf("expected _base/base.go in result, got: %v", resp.Files)
 	}
@@ -20,8 +23,8 @@ func Assert(t *testing.T, req *Request, resp *Response, err error) {
 	if found["view/build/output.js"] {
 		t.Fatalf("view/build/output.js should be excluded (build/ in .gitignore), got: %v", resp.Files)
 	}
-	if len(resp.Files) != 2 {
-		t.Fatalf("expected exactly 2 files, got %d: %v", len(resp.Files), resp.Files)
+	if len(resp.Files) != 3 {
+		t.Fatalf("expected exactly 3 files, got %d: %v", len(resp.Files), resp.Files)
 	}
 }
 ```

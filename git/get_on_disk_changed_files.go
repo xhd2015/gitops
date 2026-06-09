@@ -1,7 +1,6 @@
 package git
 
 import (
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -116,29 +115,22 @@ func expandDirsToFiles(dir string, paths []string) ([]string, error) {
 	var result []string
 	for _, p := range paths {
 		abs := filepath.Join(dir, p)
-		info, err := os.Stat(abs)
+		info, err := os.Lstat(abs)
 		if err != nil {
 			continue
 		}
 		if info.IsDir() {
-			filepath.WalkDir(abs, func(path string, d fs.DirEntry, err error) error {
-				if err != nil {
-					return nil
+			output, err := cmd.Dir(dir).Output("git", "ls-files", "--others", "--exclude-standard", "--full-name", p)
+			if err != nil {
+				return nil, err
+			}
+			for _, f := range splitLinesFilterEmpty(output) {
+				if seen[f] {
+					continue
 				}
-				if d.IsDir() {
-					return nil
-				}
-				rel, err := filepath.Rel(dir, path)
-				if err != nil {
-					return nil
-				}
-				if seen[rel] {
-					return nil
-				}
-				seen[rel] = true
-				result = append(result, rel)
-				return nil
-			})
+				seen[f] = true
+				result = append(result, f)
+			}
 		} else {
 			if seen[p] {
 				continue
