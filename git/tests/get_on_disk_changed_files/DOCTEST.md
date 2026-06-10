@@ -2,9 +2,9 @@
 
 Run with:
 ```sh
-go install github.com/xhd2015/agent-pro/agents/tdd-expert@latest
+go install github.com/xhd2015/doctest@latest
 
-tdd-expert run ./ -v
+doctest test ./ -v
 ```
 
 ## DOT Graph
