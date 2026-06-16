@@ -42,4 +42,19 @@ func Setup(t *testing.T, req *Request) error {
 	req.Dir = dir
 	return nil
 }
+
+func Run(t *testing.T, req *Request) (*Response, error) {
+	var opts []onDiskChangedFileOption
+	if req.CompareWith != "" {
+		opts = append(opts, CompareWith(req.CompareWith))
+	}
+	if req.ResolvePaths {
+		opts = append(opts, ResolvePathsToFiles())
+	}
+	files, err := GetOnDiskChangedFiles(req.Dir, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &Response{Files: files}, nil
+}
 ```

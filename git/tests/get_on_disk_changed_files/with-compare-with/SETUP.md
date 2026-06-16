@@ -1,20 +1,12 @@
 ## Preconditions
-- CompareWith option is set to a valid commit ref
+- CompareWith option is set to a valid commit ref by child tests
 
 ## Steps
-1. Call GetOnDiskChangedFiles(dir, CompareWith(ref))
+1. Ensure ResolvePaths defaults to false; child tests will override as needed
 
 ```go
-func Run(t *testing.T, req *Request) (*Response, error) {
-	var opts []onDiskChangedFileOption
-	opts = append(opts, CompareWith(req.CompareWith))
-	if req.ResolvePaths {
-		opts = append(opts, ResolvePathsToFiles())
-	}
-	files, err := GetOnDiskChangedFiles(req.Dir, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &Response{Files: files}, nil
+func Setup(t *testing.T, req *Request) error {
+	req.ResolvePaths = false
+	return nil
 }
 ```
