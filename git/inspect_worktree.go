@@ -1,6 +1,8 @@
 package git
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/xhd2015/xgo/support/cmd"
@@ -109,20 +111,57 @@ func InspectWorktree(dir string) (*WorktreeInspect, error) {
 			continue
 		}
 		result.Uncommitted++
+		weight := 1
+		if changeType == porcelainAdded {
+			weight = countAddedEntries(dir, porcelainPath(line))
+		}
 		switch changeType {
 		case porcelainAdded:
-			result.Added++
+			result.Added += weight
 		case porcelainChanged:
-			result.Changed++
+			result.Changed += weight
 		case porcelainRenamed:
-			result.Renamed++
+			result.Renamed += weight
 		case porcelainDeleted:
-			result.Deleted++
+			result.Deleted += weight
 		}
 	}
 
 	result.IsClean = result.Uncommitted == 0
 	return result, nil
+}
+
+func porcelainPath(line string) string {
+	if len(line) < 4 {
+		return ""
+	}
+	pathPart := strings.TrimSpace(line[3:])
+	if idx := strings.Index(pathPart, " -> "); idx >= 0 {
+		pathPart = strings.TrimSpace(pathPart[idx+4:])
+	}
+	return pathPart
+}
+
+// countAddedEntries returns how many added files a porcelain path represents.
+// Untracked directories are expanded to individual file counts (gitignored excluded).
+func countAddedEntries(dir, pathPart string) int {
+	if pathPart == "" {
+		return 1
+	}
+	abs := filepath.Join(dir, pathPart)
+	info, err := os.Lstat(abs)
+	if err != nil || !info.IsDir() {
+		return 1
+	}
+	output, err := cmd.Dir(dir).Output("git", "ls-files", "--others", "--exclude-standard", "--full-name", pathPart)
+	if err != nil {
+		return 1
+	}
+	files := splitLinesFilterEmpty(output)
+	if len(files) == 0 {
+		return 1
+	}
+	return len(files)
 }
 
 // TestExported_ClassifyPorcelainLine exposes porcelain line classification for doctests.

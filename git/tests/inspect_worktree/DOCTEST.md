@@ -20,6 +20,7 @@ and porcelain change counts for a directory.
 - Dirty repo → per-type counts; untracked (`??`) counts as **added**.
 - Detached HEAD → `Branch="(detached)"`, commit still populated.
 - Porcelain rules: `??`→added; `R`→renamed; `D`→deleted; `A`→added; `M`→changed.
+- Untracked directories expand **added** count via `git ls-files --others`.
 
 ## Version
 
@@ -34,6 +35,7 @@ and porcelain change counts for a directory.
  +-- clean-repo/              (LEAF)  single commit, clean worktree
  +-- dirty-all-types/        (LEAF)  added + changed + renamed + deleted
  +-- detached-head/          (LEAF)  git checkout --detach HEAD
+ +-- untracked-dir/          (LEAF)  untracked dir expands added file count
  +-- porcelain-classifier/
       +-- representative/     (LEAF)  classifyPorcelainLine table
 ```
@@ -46,7 +48,8 @@ and porcelain change counts for a directory.
 | 2 | `clean-repo` | `master`, 7-char hash, message `init`, clean |
 | 3 | `dirty-all-types` | 1 added, 1 changed, 1 renamed, 1 deleted |
 | 4 | `detached-head` | Branch `(detached)`, commit present, clean |
-| 5 | `porcelain-classifier/representative` | XY → kind mapping table |
+| 5 | `untracked-dir` | Untracked dir counts files inside (`Added=4`) |
+| 6 | `porcelain-classifier/representative` | XY → kind mapping table |
 
 ## How to Run
 

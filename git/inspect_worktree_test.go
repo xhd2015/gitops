@@ -124,6 +124,30 @@ func TestInspectWorktree_DetachedHead(t *testing.T) {
 	}
 }
 
+func TestInspectWorktree_UntrackedDirExpandsFileCount(t *testing.T) {
+	dir, clean := mustGetTmpDir()
+	defer clean()
+
+	writeFile(dir, "solo.txt", "one")
+	if err := os.MkdirAll(filepath.Join(dir, "nested", "pkg"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(dir, "nested/pkg/a.go", "a")
+	writeFile(dir, "nested/pkg/b.go", "b")
+	writeFile(dir, "nested/pkg/c.go", "c")
+
+	inspect, err := InspectWorktree(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if inspect.Added != 4 {
+		t.Fatalf("Added = %d, want 4 (1 file + 3 under nested/)", inspect.Added)
+	}
+	if inspect.Uncommitted != 2 {
+		t.Fatalf("Uncommitted = %d, want 2 porcelain lines", inspect.Uncommitted)
+	}
+}
+
 func TestClassifyPorcelainLine(t *testing.T) {
 	cases := []struct {
 		xy   string
