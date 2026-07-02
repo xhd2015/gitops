@@ -1,0 +1,34 @@
+## Expected
+
+- Raw Git under inherited `GIT_DIR` demonstrates the bug by reporting the nested directory.
+- `ShowToplevel(<repo>/go-pkgs)` returns `<repo>\n` anyway.
+- The output keeps the trailing newline from Git's raw command-style output.
+- No error is returned.
+
+## Side Effects
+
+- No repository files are modified.
+
+## Errors
+
+- None.
+
+## Exit Code
+
+- The doctest assertion succeeds after the helper is hardened.
+
+```go
+import "strings"
+
+func Assert(t *testing.T, req *Request, resp *Response, err error) {
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.RawOutput != req.NestedDir {
+		t.Fatalf("raw git proof under inherited GIT_DIR = %q, want nested dir %q", resp.RawOutput, req.NestedDir)
+	}
+	if resp.TopOutput != req.ExpectedTop {
+		t.Fatalf("ShowToplevel with inherited GIT_DIR = %q, want %q; raw git returned %q", resp.TopOutput, req.ExpectedTop, strings.TrimSpace(resp.RawOutput))
+	}
+}
+```
