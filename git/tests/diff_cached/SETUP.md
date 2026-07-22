@@ -22,6 +22,13 @@ caller -> ParseCachedDiff(raw) -> *DiffCachedParseError{Raw}
 # render helpers on *CachedDiff (P3)
 *CachedDiff -> FileCount() / Unified() / UnifiedTruncated(n)
 nil *CachedDiff -> FileCount 0, Unified "", UnifiedTruncated ""
+
+# pure rename (Kind=rename, empty Hunks): rename meta only
+FilePatch{Kind:rename, Hunks:[]} -> Unified = diff --git + rename from/to
+  (no ---/+++, no @@)
+
+# rename with content (Kind=rename, Hunks non-empty): meta + content section
+FilePatch{Kind:rename, Hunks:[...]} -> Unified keeps ---/+++ + @@ hunks
 ```
 
 ## Preconditions
@@ -35,11 +42,14 @@ nil *CachedDiff -> FileCount 0, Unified "", UnifiedTruncated ""
   call git.
 - Locked contract: `func DiffCached(dir string) (*model.CachedDiff, error)`.
 - Parse helper (for testability): `func ParseCachedDiff(raw string) (*model.CachedDiff, error)`.
-- P3 methods on `*model.CachedDiff` (classic RED until implemented):
+- P3 methods on `*model.CachedDiff`:
   - `func (d *CachedDiff) FileCount() int`
   - `func (d *CachedDiff) Unified() string`
   - `func (d *CachedDiff) UnifiedTruncated(maxLinesPerFile int) string`
-- Out of scope: commit_msg integration.
+- P1 pure-rename render (classic RED until `renderFilePatch` special-cases
+  empty-hunk renames): no `---/+++` / no `@@` when Kind=rename, !Binary,
+  len(Hunks)==0; rename+hunks keeps content section.
+- Out of scope: commit_msg integration, similarity-index storage.
 
 ## Steps
 

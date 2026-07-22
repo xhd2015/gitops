@@ -89,6 +89,11 @@ func renderFilePatch(fp FilePatch) string {
 		return strings.TrimRight(b.String(), "\n")
 	}
 
+	// Pure rename (no content change): meta only — no ---/+++ or hunks.
+	if fp.Kind == "rename" && len(fp.Hunks) == 0 {
+		return strings.TrimRight(b.String(), "\n")
+	}
+
 	// --- / +++ headers
 	if fp.Kind == "add" || fp.OldPath == "" {
 		b.WriteString("--- /dev/null\n")

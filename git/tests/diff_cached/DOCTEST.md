@@ -34,6 +34,11 @@ doctest test ./ -v
 - Non-empty unparseable text → `(nil, *DiffCachedParseError)` with `Raw` preserved.
 - `FileCount()` → number of file patches; nil receiver → 0.
 - `Unified()` → full unified-diff text for the staged patch; nil receiver → `""`.
+- **Pure rename** (`Kind=rename`, non-binary, empty `Hunks`): `Unified` emits
+  only `diff --git a/<old> b/<new>`, `rename from <old>`, `rename to <new>` —
+  no `---/+++` file headers and no `@@` hunks.
+- **Rename + content** (`Kind=rename` with non-empty `Hunks`): rename meta plus
+  `---/+++` and hunk bodies (same shape as git for partial renames).
 - `UnifiedTruncated(maxLinesPerFile)` → per file section, keep first
   `maxLinesPerFile` lines; if more, append `\n...(%d more lines omitted)` with
   remaining line count; nil receiver → `""`.
@@ -55,6 +60,8 @@ DiffCached / ParseCachedDiff / CachedDiff methods
 ├── file-count/                  # two staged files → FileCount()==2
 ├── unified-roundtrip-ish/       # staged small file → Unified has diff --git + path
 ├── unified-truncated-long-file/ # long staged file → UnifiedTruncated(24) omits tail
+├── pure-rename-unified/         # live 100% rename → Unified: rename meta only (no ---/+++, no @@)
+├── rename-with-hunks-unified/   # parse rename+edit → Unified keeps rename meta + ---/+++ + @@
 └── nil-receiver-methods/        # nil *CachedDiff → FileCount 0, Unified/Truncated ""
 ```
 
@@ -70,12 +77,14 @@ DiffCached / ParseCachedDiff / CachedDiff methods
 | 6 | `file-count/` | Two distinct staged files | `FileCount() == 2` |
 | 7 | `unified-roundtrip-ish/` | One small staged file (`note.txt`) | `Unified()` contains `diff --git` and `note.txt` |
 | 8 | `unified-truncated-long-file/` | One staged file whose unified section is >24 lines | `UnifiedTruncated(24)` has omit marker; shorter than `Unified()`; late body absent |
-| 9 | `nil-receiver-methods/` | Mode `nil-methods` (no git call) | nil receiver: FileCount 0, Unified `""`, UnifiedTruncated `""` |
+| 9 | `pure-rename-unified/` | Live `git mv` 100% rename (`oldname.txt`→`newname.txt`) | `Unified()` has rename from/to; no `@@`; no `---/+++` |
+| 10 | `rename-with-hunks-unified/` | Mode `parse` rename+content raw (`old.go`→`new.go` + hunk) | `Unified()` has rename meta + `---/+++` + `@@` + body |
+| 11 | `nil-receiver-methods/` | Mode `nil-methods` (no git call) | nil receiver: FileCount 0, Unified `""`, UnifiedTruncated `""` |
 
 ## How to Run
 
 ```sh
-cd external/gitops-master-2026-07-16
+cd external/gitops-master-2026-07-22
 doctest vet ./git/tests/diff_cached
 doctest test -v ./git/tests/diff_cached
 ```
