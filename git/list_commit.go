@@ -300,8 +300,95 @@ func doListRelativeToBase(dir string, head string, base string, forDiff bool) (e
 		}
 	} else {
 		commits = parseCommits(res)
+		commits, err = expandDirectMergeSecondParents(dir, commits, base)
 	}
 	return
+}
+
+// expandDirectMergeSecondParents preserves the first-parent history as the
+// branch's basic history, then recovers the first-parent chains directly
+// merged into that history. A merge encountered on a recovered chain is not
+// expanded: only the chain's first parent is followed.
+func expandDirectMergeSecondParents(dir string, basic []*model.Commit, base string) ([]*model.Commit, error) {
+	if len(basic) == 0 {
+		return basic, nil
+	}
+
+	baseCommit, err := RevParseOrEmpty(dir, base)
+	if err != nil {
+		return nil, err
+	}
+
+	known := make(map[string]bool, len(basic))
+	for _, commit := range basic {
+		known[commit.Hash] = true
+	}
+
+	// sideParents contains only recovered first-parent edges. Keeping this
+	// limited graph lets us emit side commits in topological order without
+	// following an inner merge's second parent.
+	sideCommits := make(map[string]*model.Commit)
+	sideParents := make(map[string]string)
+	directChildren := make(map[string]int)
+	discoveryOrder := make([]string, 0)
+
+	for _, merge := range basic {
+		secondParent, err := RevParseOrEmpty(dir, merge.Hash+"^2")
+		if err != nil {
+			return nil, err
+		}
+		if secondParent == "" {
+			continue
+		}
+
+		for current := secondParent; current != "" && current != baseCommit && !known[current]; {
+			commit, err := GetCommit(dir, current)
+			if err != nil {
+				return nil, err
+			}
+			known[current] = true
+			sideCommits[current] = commit
+			discoveryOrder = append(discoveryOrder, current)
+
+			firstParent, err := RevParseOrEmpty(dir, current+"^1")
+			if err != nil {
+				return nil, err
+			}
+			if firstParent != "" && firstParent != baseCommit {
+				sideParents[current] = firstParent
+				if _, recovered := sideCommits[firstParent]; recovered {
+					directChildren[firstParent]++
+				}
+			}
+			current = firstParent
+		}
+
+	}
+
+	// Emit recovered paths with children before their shared ancestors. This
+	// keeps each side chain newest-to-oldest while avoiding duplicate commits
+	// where direct merges reconverge.
+	queue := make([]string, 0, len(discoveryOrder))
+	for _, hash := range discoveryOrder {
+		if directChildren[hash] == 0 {
+			queue = append(queue, hash)
+		}
+	}
+	recovered := make([]*model.Commit, 0, len(sideCommits))
+	for len(queue) > 0 {
+		hash := queue[0]
+		queue = queue[1:]
+		recovered = append(recovered, sideCommits[hash])
+		if parent, ok := sideParents[hash]; ok {
+			if _, exists := sideCommits[parent]; exists {
+				directChildren[parent]--
+				if directChildren[parent] == 0 {
+					queue = append(queue, parent)
+				}
+			}
+		}
+	}
+	return append(basic, recovered...), nil
 }
 
 func parseCommits(res string) []*model.Commit {
