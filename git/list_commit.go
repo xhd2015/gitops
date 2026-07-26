@@ -314,26 +314,63 @@ func expandDirectMergeSecondParents(dir string, basic []*model.Commit, base stri
 		return basic, nil
 	}
 
+	basicHashes := make([]string, 0, len(basic))
+	commitByHash := make(map[string]*model.Commit, len(basic))
+	for _, commit := range basic {
+		basicHashes = append(basicHashes, commit.Hash)
+		commitByHash[commit.Hash] = commit
+	}
+	hashes, err := expandDirectMergeSecondParentHashes(dir, basicHashes, base)
+	if err != nil {
+		return nil, err
+	}
+	commits := make([]*model.Commit, 0, len(hashes))
+	for _, hash := range hashes {
+		commit := commitByHash[hash]
+		if commit == nil {
+			commit, err = GetCommit(dir, hash)
+			if err != nil {
+				return nil, err
+			}
+		}
+		commits = append(commits, commit)
+	}
+	return commits, nil
+}
+
+// expandDirectMergeSecondParentHashes preserves the first-parent history as
+// the branch's basic history, then recovers the first-parent chains directly
+// merged into that history. A merge encountered on a recovered chain is not
+// expanded: only the chain's first parent is followed.
+//
+// Both ListCommitRelativeToBase and FindDiffPoints expose branch histories to
+// callers. Keeping the recovery at the hash level ensures their semantics do
+// not drift.
+func expandDirectMergeSecondParentHashes(dir string, basic []string, base string) ([]string, error) {
+	if len(basic) == 0 {
+		return basic, nil
+	}
+
 	baseCommit, err := RevParseOrEmpty(dir, base)
 	if err != nil {
 		return nil, err
 	}
 
 	known := make(map[string]bool, len(basic))
-	for _, commit := range basic {
-		known[commit.Hash] = true
+	for _, hash := range basic {
+		known[hash] = true
 	}
 
 	// sideParents contains only recovered first-parent edges. Keeping this
 	// limited graph lets us emit side commits in topological order without
 	// following an inner merge's second parent.
-	sideCommits := make(map[string]*model.Commit)
+	sideCommits := make(map[string]bool)
 	sideParents := make(map[string]string)
 	directChildren := make(map[string]int)
 	discoveryOrder := make([]string, 0)
 
 	for _, merge := range basic {
-		secondParent, err := RevParseOrEmpty(dir, merge.Hash+"^2")
+		secondParent, err := RevParseOrEmpty(dir, merge+"^2")
 		if err != nil {
 			return nil, err
 		}
@@ -342,12 +379,8 @@ func expandDirectMergeSecondParents(dir string, basic []*model.Commit, base stri
 		}
 
 		for current := secondParent; current != "" && current != baseCommit && !known[current]; {
-			commit, err := GetCommit(dir, current)
-			if err != nil {
-				return nil, err
-			}
 			known[current] = true
-			sideCommits[current] = commit
+			sideCommits[current] = true
 			discoveryOrder = append(discoveryOrder, current)
 
 			firstParent, err := RevParseOrEmpty(dir, current+"^1")
@@ -374,11 +407,11 @@ func expandDirectMergeSecondParents(dir string, basic []*model.Commit, base stri
 			queue = append(queue, hash)
 		}
 	}
-	recovered := make([]*model.Commit, 0, len(sideCommits))
+	recovered := make([]string, 0, len(sideCommits))
 	for len(queue) > 0 {
 		hash := queue[0]
 		queue = queue[1:]
-		recovered = append(recovered, sideCommits[hash])
+		recovered = append(recovered, hash)
 		if parent, ok := sideParents[hash]; ok {
 			if _, exists := sideCommits[parent]; exists {
 				directChildren[parent]--

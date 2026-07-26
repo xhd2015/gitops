@@ -15,8 +15,11 @@ func Assert(t *testing.T, d *session.Doctest, req *Request, resp *Response, err 
     if err != nil {
         t.Fatal(err)
     }
-    if !reflect.DeepEqual(resp.Hashes, req.Expected) {
-        t.Fatalf("hashes=%v, want recovered P2 chain %v", resp.Hashes, req.Expected)
+    if !reflect.DeepEqual(resp.RelativeHashes, req.Expected) {
+        t.Fatalf("relative hashes=%v, want recovered P2 chain %v", resp.RelativeHashes, req.Expected)
+    }
+    if !reflect.DeepEqual(resp.DiffPointHashes, req.Expected) {
+        t.Fatalf("diff-point hashes=%v, want recovered P2 chain %v", resp.DiffPointHashes, req.Expected)
     }
 }
 ```

@@ -8,11 +8,10 @@
 
 A Git branch has a head, a base, and a first-parent history. A merge commit on
 that history has a second parent representing the line merged into the branch.
-`ListCommitRelativeToBase` is the branch scanner's view of the commits that
-belong to the branch relative to its base. It must retain the first-parent
-history and recover the first-parent path of a directly merged second parent,
-but it must not recursively widen into merges encountered on that recovered
-path.
+`ListCommitRelativeToBase` and `FindDiffPoints` are the two public branch
+history views. They must retain the first-parent history and recover the
+first-parent path of a directly merged second parent, but must not recursively
+widen into merges encountered on that recovered path.
 
 ## Decision tree
 
@@ -56,7 +55,8 @@ type Request struct {
 }
 
 type Response struct {
-    Hashes []string
+    RelativeHashes []string
+    DiffPointHashes []string
 }
 
 func Run(t *testing.T, d *session.Doctest, req *Request) (*Response, error) {
@@ -74,6 +74,10 @@ func Run(t *testing.T, d *session.Doctest, req *Request) (*Response, error) {
     for _, commit := range commits {
         hashes = append(hashes, commit.Hash)
     }
-    return &Response{Hashes: hashes}, nil
+    _, _, _, _, _, diffPointHashes, err := gitopsgit.FindDiffPoints(req.Dir, req.Head, req.Base, "")
+    if err != nil {
+        return nil, err
+    }
+    return &Response{RelativeHashes: hashes, DiffPointHashes: diffPointHashes}, nil
 }
 ```
