@@ -1,0 +1,23 @@
+## Expected
+
+- All `Counts` fields are zero
+- No error
+
+```go
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Assert(t *testing.T, d *session.Doctest, req *Request, resp *Response, err error) {
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	c := resp.Counts
+	if c.Modified != 0 || c.Added != 0 || c.Deleted != 0 || c.Untracked != 0 ||
+		c.Renamed != 0 || c.Copied != 0 || c.Unmerged != 0 {
+		t.Fatalf("expected zero Counts, got %+v", c)
+	}
+}
+```
