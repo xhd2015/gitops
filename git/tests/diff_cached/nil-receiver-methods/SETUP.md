@@ -26,9 +26,13 @@ nil *model.CachedDiff -> UnifiedTruncated(24) == ""
 - Contract from P3 API: nil receiver → FileCount 0, Unified `""`, UnifiedTruncated `""`.
 
 ```go
-import "testing"
+import (
+	"testing"
 
-func Setup(t *testing.T, req *Request) error {
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	req.Mode = "nil-methods"
 	return nil
 }

@@ -40,6 +40,8 @@ doctest test ./gitops-dot/git/tests/list_ignored_dirs
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 	"path/filepath"
 )
@@ -54,7 +56,7 @@ type Response struct {
 
 // Run calls ListIgnoredDirs(req.Dir). req.Dir is set up by Setup (a git repo for
 // the ignored-dir leaf, a plain non-repo dir for the not-a-git-repo leaf).
-func Run(t *testing.T, req *Request) (*Response, error) {
+func Run(t *testing.T, d *session.Doctest, req *Request) (*Response, error) {
 	dirs, err := ListIgnoredDirs(req.Dir)
 	if err != nil {
 		return nil, err

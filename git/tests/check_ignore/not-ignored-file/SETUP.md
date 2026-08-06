@@ -10,11 +10,13 @@
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 	"path/filepath"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir := req.Dir
 	testdata := filepath.Join("testdata")
 	entries, err := os.ReadDir(testdata)

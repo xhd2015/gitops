@@ -4,10 +4,12 @@
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"path/filepath"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir := req.Dir
 	return os.Rename(filepath.Join(dir, "README.md"), filepath.Join(dir, "RENAMED.go"))
 }

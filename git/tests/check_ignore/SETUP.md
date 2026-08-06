@@ -15,20 +15,14 @@
 
 ```go
 import (
+	"testing"
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 )
 
-type Request struct {
-	Dir  string
-	Path string
-}
-
-type Response struct {
-	Ignored bool
-}
-
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir, err := os.MkdirTemp("", "gittest")
 	if err != nil {
 		return err
@@ -41,13 +35,5 @@ func Setup(t *testing.T, req *Request) error {
 	exec.Command("git", "-C", dir, "commit", "-m", "initial commit").Run()
 	req.Dir = dir
 	return nil
-}
-
-func Run(t *testing.T, req *Request) (*Response, error) {
-	ignored, err := CheckIgnore(req.Dir, req.Path)
-	if err != nil {
-		return nil, err
-	}
-	return &Response{Ignored: ignored}, nil
 }
 ```

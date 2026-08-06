@@ -23,13 +23,14 @@ InspectWorktree -> dirty (1 added, 1 changed, 1 renamed, 1 deleted)
 ```go
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
+	"github.com/xhd2015/doctest/session"
+	"path/filepath"
 	"github.com/xhd2015/xgo/support/cmd"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir := req.Dir
 
 	writeFile(t, dir, "tracked.txt", "baseline")

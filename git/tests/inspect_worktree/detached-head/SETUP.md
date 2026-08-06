@@ -23,10 +23,11 @@ InspectWorktree -> Branch="(detached)", commit still shown, IsClean=true
 import (
 	"testing"
 
+	"github.com/xhd2015/doctest/session"
 	"github.com/xhd2015/xgo/support/cmd"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	if err := cmd.Dir(req.Dir).Run("git", "checkout", "--detach", "HEAD"); err != nil {
 		return err
 	}

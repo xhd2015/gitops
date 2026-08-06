@@ -24,7 +24,13 @@ ShowToplevel <- <repo>\n
 - This leaf is expected to be RED before implementation because the current helper inherits `GIT_DIR`.
 
 ```go
-func Setup(t *testing.T, req *Request) error {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	if req.GitDir == "" {
 		t.Fatal("parent setup did not provide git dir")
 	}

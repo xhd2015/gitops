@@ -29,9 +29,13 @@ CachedDiff{Raw, Files:[{OldPath,NewPath,Kind,Binary,Hunks:[{Header,Lines}]}]}
 - Binary false for the text sample.
 
 ```go
-import "testing"
+import (
+	"testing"
 
-func Setup(t *testing.T, req *Request) error {
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	req.Mode = "cached-diff-fields"
 	req.SampleRaw = "diff --git a/file.txt b/file.txt\n"
 	req.SampleOldPath = "file.txt"

@@ -38,11 +38,13 @@ git mv oldname.txt newname.txt
 
 ```go
 import (
-	"os/exec"
 	"testing"
+
+	"github.com/xhd2015/doctest/session"
+	"os/exec"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	// Commit a tracked file, then pure-rename it in the index.
 	if err := writeFile(req.Dir, "oldname.txt", "pure rename body\n"); err != nil {
 		return err

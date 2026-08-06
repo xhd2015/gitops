@@ -302,3 +302,40 @@ GetOnDiskChangedFiles(dir, opts...)
 | 58 | `errors/not-a-git-repo/` | Dir is not a git repo | error |
 | 59 | `errors/dir-not-found/` | Dir path does not exist | error |
 | 60 | `errors/git-command-failed/` | Corrupted .git | error |
+
+## Root Run
+
+```go
+import (
+	"testing"
+	"os"
+
+	"github.com/xhd2015/doctest/session"
+	"os/exec"
+)
+
+type Request struct {
+	Dir          string
+	CompareWith  string // empty string means no compare
+	ResolvePaths bool
+}
+
+type Response struct {
+	Files []string
+}
+
+func Run(t *testing.T, d *session.Doctest, req *Request) (*Response, error) {
+	var opts []onDiskChangedFileOption
+	if req.CompareWith != "" {
+		opts = append(opts, CompareWith(req.CompareWith))
+	}
+	if req.ResolvePaths {
+		opts = append(opts, ResolvePathsToFiles())
+	}
+	files, err := GetOnDiskChangedFiles(req.Dir, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &Response{Files: files}, nil
+}
+```

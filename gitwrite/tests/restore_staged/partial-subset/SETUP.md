@@ -19,7 +19,13 @@ git add a.txt b.txt -> git restore --staged -- a.txt -> diff --cached = [b.txt]
 3. Run `RestoreStaged`, then verify only `a.txt` is unstaged.
 
 ```go
-func Setup(t *testing.T, req *Request) error {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	if err := stageFile(req.Dir, "a.txt", "aaa"); err != nil {
 		return err
 	}

@@ -9,10 +9,12 @@ Repo-local core.hooksPath still runs under isolated git.
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"path/filepath"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	repo := filepath.Join(t.TempDir(), "repo")
 	hooksDir := filepath.Join(t.TempDir(), "hooks")
 	if err := os.MkdirAll(hooksDir, 0o755); err != nil {

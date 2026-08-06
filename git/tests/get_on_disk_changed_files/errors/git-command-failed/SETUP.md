@@ -4,7 +4,13 @@
 3. For example, remove .git/HEAD or make .git unreadable
 
 ```go
-func Setup(t *testing.T, req *Request) error {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	// Create a dir with a .git but no valid HEAD
 	dir, err := os.MkdirTemp("", "broken-git")
 	if err != nil {

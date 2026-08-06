@@ -7,11 +7,13 @@
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 	"path/filepath"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir := req.Dir
 	if err := exec.Command("git", "-C", dir, "tag", "v1.0").Run(); err != nil {
 		return err

@@ -4,11 +4,13 @@
 
 ```go
 import (
-	"os/exec"
 	"testing"
+
+	"github.com/xhd2015/doctest/session"
+	"os/exec"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	cmd := exec.Command("git", "tag", "v1")
 	cmd.Dir = req.Dir
 	out, err := cmd.CombinedOutput()

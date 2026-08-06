@@ -14,21 +14,14 @@
 
 ```go
 import (
+	"testing"
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 )
 
-type Request struct {
-	Dir          string
-	CompareWith  string // empty string means no compare
-	ResolvePaths bool
-}
-
-type Response struct {
-	Files []string
-}
-
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir, err := os.MkdirTemp("", "gittest")
 	if err != nil {
 		return err
@@ -41,20 +34,5 @@ func Setup(t *testing.T, req *Request) error {
 	exec.Command("git", "-C", dir, "commit", "-m", "initial commit").Run()
 	req.Dir = dir
 	return nil
-}
-
-func Run(t *testing.T, req *Request) (*Response, error) {
-	var opts []onDiskChangedFileOption
-	if req.CompareWith != "" {
-		opts = append(opts, CompareWith(req.CompareWith))
-	}
-	if req.ResolvePaths {
-		opts = append(opts, ResolvePathsToFiles())
-	}
-	files, err := GetOnDiskChangedFiles(req.Dir, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &Response{Files: files}, nil
 }
 ```

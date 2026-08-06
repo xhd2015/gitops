@@ -5,10 +5,12 @@
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"path/filepath"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir := req.Dir
 	if err := os.MkdirAll(filepath.Join(dir, "view"), 0755); err != nil {
 		return err

@@ -3,7 +3,13 @@
 - `view/sub/a.tmp` is excluded because `view/sub/.gitignore` ignores `*.tmp`
 
 ```go
-func Assert(t *testing.T, req *Request, resp *Response, err error) {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Assert(t *testing.T, d *session.Doctest, req *Request, resp *Response, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}

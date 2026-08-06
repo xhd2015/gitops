@@ -25,13 +25,15 @@ git repo, or an empty slice when dir is not a git repo.
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 	"path/filepath"
 )
 
 // Setup creates an isolated temp dir and assigns it to req.Dir. Leaf Setup
 // functions configure the repo (or leave it a plain non-repo dir).
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir, err := os.MkdirTemp("", "gittest")
 	if err != nil {
 		return err

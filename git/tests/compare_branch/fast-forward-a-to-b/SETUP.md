@@ -6,12 +6,14 @@
 ```go
 import (
 	"os"
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 	"path/filepath"
-	"testing"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir := req.Dir
 	runGit := func(args ...string) {
 		cmd := exec.Command("git", args...)

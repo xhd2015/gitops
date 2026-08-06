@@ -12,7 +12,13 @@
 2. Do NOT add `ext` to `dir`'s index.
 
 ```go
-func Setup(t *testing.T, req *Request) error {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir := req.Dir
 	ext := filepath.Join(dir, "ext")
 	os.MkdirAll(ext, 0755)

@@ -29,11 +29,13 @@ caller <- ShowToplevel: <repo>\n
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 	"path/filepath"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir, err := os.MkdirTemp("", "gitops-show-toplevel-*")
 	if err != nil {
 		return err

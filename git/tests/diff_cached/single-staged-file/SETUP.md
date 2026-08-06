@@ -23,9 +23,13 @@ write file.txt -> git add file.txt -> parse staged patch -> Files include file.t
   (e.g. add/modify) as long as the staged path is reflected.
 
 ```go
-import "testing"
+import (
+	"testing"
 
-func Setup(t *testing.T, req *Request) error {
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	return stageFile(req.Dir, "file.txt", "hello")
 }
 ```

@@ -24,7 +24,13 @@ caller <- <repo>\n
 - This leaf protects the existing successful baseline behavior.
 
 ```go
-func Setup(t *testing.T, req *Request) error {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	if req.NestedDir == "" {
 		t.Fatal("parent setup did not provide nested dir")
 	}

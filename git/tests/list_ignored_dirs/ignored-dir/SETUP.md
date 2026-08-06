@@ -12,7 +12,13 @@
 3. Stage and commit (the ignored dir stays untracked).
 
 ```go
-func Setup(t *testing.T, req *Request) error {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir := req.Dir
 	exec.Command("git", "-C", dir, "init").Run()
 	exec.Command("git", "-C", dir, "branch", "-M", "master").Run()

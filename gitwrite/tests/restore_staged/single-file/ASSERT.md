@@ -9,10 +9,15 @@
 - `a.txt` is removed from the git index but preserved in the working tree.
 
 ```go
-import "os"
+import (
+	"os"
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
 import "path/filepath"
 
-func Assert(t *testing.T, req *Request, resp *Response, err error) {
+func Assert(t *testing.T, d *session.Doctest, req *Request, resp *Response, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -40,6 +40,8 @@ doctest test ./gitops-dot/git/tests/is_submodule
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 	"path/filepath"
 )
@@ -56,7 +58,7 @@ type Response struct {
 // Run calls IsSubmodule(req.Dir, req.Path). req.Dir is the root repo (git-init'd
 // by Setup with an initial commit); req.Path is "ext". Leaf Setup either wires
 // ext/ in as a real submodule or leaves it a nested separate repo.
-func Run(t *testing.T, req *Request) (*Response, error) {
+func Run(t *testing.T, d *session.Doctest, req *Request) (*Response, error) {
 	ok, err := IsSubmodule(req.Dir, req.Path)
 	if err != nil {
 		return nil, err

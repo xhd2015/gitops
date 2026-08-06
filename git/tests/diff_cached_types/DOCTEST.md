@@ -59,6 +59,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/xhd2015/doctest/session"
 	"github.com/xhd2015/gitops/git"
 	"github.com/xhd2015/gitops/model"
 )
@@ -104,7 +105,7 @@ type Response struct {
 	AsRaw        string
 }
 
-func Run(t *testing.T, req *Request) (*Response, error) {
+func Run(t *testing.T, d *session.Doctest, req *Request) (*Response, error) {
 	switch req.Mode {
 	case "cached-diff-fields":
 		var zero model.CachedDiff

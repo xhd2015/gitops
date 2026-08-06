@@ -25,9 +25,13 @@ stage a.txt + b.txt -> DiffCached(dir) -> d.FileCount() == 2
 - Count is the number of `Files` entries (file patches), not hunks or lines.
 
 ```go
-import "testing"
+import (
+	"testing"
 
-func Setup(t *testing.T, req *Request) error {
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	if err := stageFile(req.Dir, "a.txt", "alpha\n"); err != nil {
 		return err
 	}

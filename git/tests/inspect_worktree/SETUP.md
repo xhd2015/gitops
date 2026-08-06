@@ -26,13 +26,14 @@ Setup -> git init -> branch -M master -> commit "init" -> req.Dir
 ```go
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
+	"github.com/xhd2015/doctest/session"
+	"path/filepath"
 	"github.com/xhd2015/xgo/support/cmd"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir, err := os.MkdirTemp("", "gitops-inspect-*")
 	if err != nil {
 		return err

@@ -18,9 +18,14 @@ git commit file.txt -> git rm file.txt -> git diff --cached --diff-filter=ACMRT 
 3. Run `GetStagedFiles(req.Dir)`.
 
 ```go
-import "os/exec"
+import (
+	"testing"
 
-func Setup(t *testing.T, req *Request) error {
+	"github.com/xhd2015/doctest/session"
+	"os/exec"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir := req.Dir
 	// Create and commit the file
 	if err := stageFile(dir, "remove-me.txt", "to be deleted"); err != nil {

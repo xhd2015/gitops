@@ -19,9 +19,14 @@ git add a.txt -> git restore --staged -- a.txt -> diff --cached is empty, a.txt 
 3. Run `RestoreStaged`, then verify `a.txt` is not in the staged list.
 
 ```go
-import "path/filepath"
+import (
+	"testing"
 
-func Setup(t *testing.T, req *Request) error {
+	"github.com/xhd2015/doctest/session"
+	"path/filepath"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	if err := stageFile(req.Dir, "a.txt", "hello"); err != nil {
 		return err
 	}

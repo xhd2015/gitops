@@ -23,9 +23,11 @@ Setup -> req.Dir = empty directory (no .git)
 import (
 	"os"
 	"testing"
+
+	"github.com/xhd2015/doctest/session"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir, err := os.MkdirTemp("", "gitops-inspect-nogit-*")
 	if err != nil {
 		return err

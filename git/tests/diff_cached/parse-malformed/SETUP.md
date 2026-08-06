@@ -28,9 +28,13 @@ caller -> ParseCachedDiff("not a valid unified diff...")
   failure surface independently.
 
 ```go
-import "testing"
+import (
+	"testing"
 
-func Setup(t *testing.T, req *Request) error {
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	req.Mode = "parse"
 	// Non-empty garbage: not a unified diff header/hunk stream.
 	req.Raw = "not a valid unified diff\n@@ broken\nthis is not a patch\n"

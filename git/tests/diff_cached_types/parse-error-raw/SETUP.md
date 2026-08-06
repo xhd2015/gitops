@@ -27,9 +27,13 @@ DiffCachedParseError{Dir, Raw, Err: cause}
 - Raw is preserved for diagnostics even when parse fails.
 
 ```go
-import "testing"
+import (
+	"testing"
 
-func Setup(t *testing.T, req *Request) error {
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	req.Mode = "parse-error-raw"
 	req.Dir = "/tmp/repo-under-test"
 	req.Raw = "not a valid unified diff\n@@ broken"

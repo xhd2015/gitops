@@ -50,6 +50,8 @@ doctest test ./external/gitops-master-2026-07-02/git/tests/get_staged_files
 ```go
 import (
 	"testing"
+
+	"github.com/xhd2015/doctest/session"
 )
 
 type Request struct {
@@ -60,7 +62,7 @@ type Response struct {
 	Files []string
 }
 
-func Run(t *testing.T, req *Request) (*Response, error) {
+func Run(t *testing.T, d *session.Doctest, req *Request) (*Response, error) {
 	files, err := GetStagedFiles(req.Dir)
 	if err != nil {
 		return nil, err

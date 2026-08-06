@@ -17,7 +17,13 @@ write sub/pkg.go -> git add sub/pkg.go -> git diff --cached -> ["sub/pkg.go"]
 2. Run `GetStagedFiles(req.Dir)`.
 
 ```go
-func Setup(t *testing.T, req *Request) error {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	return stageFile(req.Dir, "sub/pkg.go", "package pkg")
 }
 ```

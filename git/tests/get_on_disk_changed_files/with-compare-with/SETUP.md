@@ -5,7 +5,13 @@
 1. Ensure ResolvePaths defaults to false; child tests will override as needed
 
 ```go
-func Setup(t *testing.T, req *Request) error {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	req.ResolvePaths = false
 	return nil
 }

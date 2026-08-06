@@ -71,12 +71,14 @@ FilePatch{Kind:rename, Hunks:[...]} -> Unified keeps ---/+++ + @@ hunks
 ```go
 import (
 	"os"
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 	"path/filepath"
-	"testing"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir, err := os.MkdirTemp("", "gittest-diff-cached")
 	if err != nil {
 		return err

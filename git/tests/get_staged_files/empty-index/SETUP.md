@@ -17,9 +17,14 @@ fresh repo (initial commit only) -> git diff --cached = empty -> []
 2. Run `GetStagedFiles(req.Dir)`.
 
 ```go
-import "os/exec"
+import (
+	"testing"
 
-func Setup(t *testing.T, req *Request) error {
+	"github.com/xhd2015/doctest/session"
+	"os/exec"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	// Root SETUP already created the repo with an initial commit.
 	// Verify staging area is empty before the test runs.
 	out, err := exec.Command("git", "-C", req.Dir, "diff", "--cached", "--name-only").Output()

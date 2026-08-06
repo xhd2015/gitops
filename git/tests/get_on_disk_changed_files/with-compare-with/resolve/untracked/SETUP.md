@@ -7,11 +7,13 @@
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 	"path/filepath"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir := req.Dir
 	p := filepath.Join(dir, "_utbase.go")
 	if err := os.WriteFile(p, []byte("package main"), 0644); err != nil {

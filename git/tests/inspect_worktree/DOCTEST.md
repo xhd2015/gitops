@@ -63,6 +63,7 @@ doctest test ./git/tests/inspect_worktree/...
 import (
 	"testing"
 
+	"github.com/xhd2015/doctest/session"
 	"github.com/xhd2015/gitops/git"
 )
 
@@ -81,7 +82,7 @@ type Response struct {
 	PorcelainKind string
 }
 
-func Run(t *testing.T, req *Request) (*Response, error) {
+func Run(t *testing.T, d *session.Doctest, req *Request) (*Response, error) {
 	if len(req.PorcelainCases) > 0 {
 		return &Response{}, nil
 	}

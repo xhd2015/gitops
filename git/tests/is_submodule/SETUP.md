@@ -28,6 +28,8 @@ dir, distinguishing real submodules from nested separate repos.
 ```go
 import (
 	"os"
+
+	"github.com/xhd2015/doctest/session"
 	"os/exec"
 	"path/filepath"
 )
@@ -35,7 +37,7 @@ import (
 // Setup creates an isolated git repo at req.Dir with an initial commit, and sets
 // req.Path = "ext". Leaf Setup functions wire ext/ as a submodule or a nested
 // separate repo.
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir, err := os.MkdirTemp("", "gittest")
 	if err != nil {
 		return err

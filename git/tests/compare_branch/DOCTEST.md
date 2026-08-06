@@ -35,3 +35,35 @@ CompareBranches(dir, refA, refB)
 | 8 | `not-a-git-repo-leaf` | `dir` is not a git repo | error |
 | 9 | `dir-param-valid` | `dir` points to a valid git repo | `BranchRelationSame` |
 | 10 | `dir-param-nonexistent` | `dir` does not exist | error |
+
+## Root Run
+
+```go
+import (
+	"os"
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+	"os/exec"
+	"path/filepath"
+	"github.com/xhd2015/gitops/git"
+)
+
+type Request struct {
+	Dir  string
+	RefA string
+	RefB string
+}
+
+type Response struct {
+	Result *git.CompareBranchesResult
+}
+
+func Run(t *testing.T, d *session.Doctest, req *Request) (*Response, error) {
+	result, err := git.CompareBranches(req.Dir, req.RefA, req.RefB)
+	if err != nil {
+		return nil, err
+	}
+	return &Response{Result: result}, nil
+}
+```

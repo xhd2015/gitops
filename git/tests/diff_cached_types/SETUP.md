@@ -32,9 +32,11 @@ DiffCachedParseError -> Error() / Unwrap() / errors.As
 import (
 	"fmt"
 	"testing"
+
+	"github.com/xhd2015/doctest/session"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	// Type-level tree: no git repo; leaves fill Mode + inputs.
 	t.Helper()
 	if req == nil {

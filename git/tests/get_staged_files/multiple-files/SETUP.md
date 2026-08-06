@@ -17,7 +17,13 @@ write a.txt b.txt -> git add a.txt b.txt -> git diff --cached -> ["a.txt", "b.tx
 2. Run `GetStagedFiles(req.Dir)`.
 
 ```go
-func Setup(t *testing.T, req *Request) error {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	if err := stageFile(req.Dir, "a.txt", "aaa"); err != nil {
 		return err
 	}

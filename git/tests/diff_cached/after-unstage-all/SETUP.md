@@ -20,11 +20,13 @@ git add file.txt -> git restore --staged -- . -> empty staged patch -> (nil, nil
 
 ```go
 import (
-	"os/exec"
 	"testing"
+
+	"github.com/xhd2015/doctest/session"
+	"os/exec"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	if err := stageFile(req.Dir, "file.txt", "hello"); err != nil {
 		return err
 	}

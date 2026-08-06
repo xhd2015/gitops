@@ -46,3 +46,32 @@ CheckIgnore(dir, path)
 | 4 | `negation-pattern/` | `.gitignore`=`*.o` then `!important.o`, `important.o` exists | `false` |
 | 5 | `not-a-git-repo/` | `dir` is not a git repo | error |
 | 6 | `non-existent-path/` | `.gitignore`=`*.log`, path `missing.log` does not exist | `false` |
+
+## Root Run
+
+```go
+import (
+	"testing"
+	"os"
+
+	"github.com/xhd2015/doctest/session"
+	"os/exec"
+)
+
+type Request struct {
+	Dir  string
+	Path string
+}
+
+type Response struct {
+	Ignored bool
+}
+
+func Run(t *testing.T, d *session.Doctest, req *Request) (*Response, error) {
+	ignored, err := CheckIgnore(req.Dir, req.Path)
+	if err != nil {
+		return nil, err
+	}
+	return &Response{Ignored: ignored}, nil
+}
+```

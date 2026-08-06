@@ -25,9 +25,13 @@ stage note.txt -> DiffCached(dir) -> d.Unified() includes "diff --git" + "note.t
   rendered text is a usable unified diff mentioning the staged path.
 
 ```go
-import "testing"
+import (
+	"testing"
 
-func Setup(t *testing.T, req *Request) error {
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	return stageFile(req.Dir, "note.txt", "hello from note\n")
 }
 ```

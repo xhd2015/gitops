@@ -23,7 +23,13 @@ ShowToplevel <- <repo>\n
 - This is the baseline behavior current callers already rely on.
 
 ```go
-func Setup(t *testing.T, req *Request) error {
+import (
+	"testing"
+
+	"github.com/xhd2015/doctest/session"
+)
+
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	req.InheritGitDir = false
 	return nil
 }

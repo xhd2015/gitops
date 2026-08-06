@@ -4,11 +4,13 @@
 
 ```go
 import (
-    "os"
-    "os/exec"
+	"os"
+
+	"github.com/xhd2015/doctest/session"
+	"os/exec"
 )
 
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
     dir, err := os.MkdirTemp("", "isinsidegit")
     if err != nil {
         return err

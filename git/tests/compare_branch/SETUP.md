@@ -15,24 +15,15 @@
 ```go
 import (
 	"os"
-	"os/exec"
-	"path/filepath"
 	"testing"
 
+	"github.com/xhd2015/doctest/session"
+	"os/exec"
+	"path/filepath"
 	"github.com/xhd2015/gitops/git"
 )
 
-type Request struct {
-	Dir  string
-	RefA string
-	RefB string
-}
-
-type Response struct {
-	Result *git.CompareBranchesResult
-}
-
-func Setup(t *testing.T, req *Request) error {
+func Setup(t *testing.T, d *session.Doctest, req *Request) error {
 	dir, err := os.MkdirTemp("", "gitops-compare-branch-*")
 	if err != nil {
 		return err
@@ -44,7 +35,8 @@ func Setup(t *testing.T, req *Request) error {
 		cmd.Dir = dir
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			t.Fatalf("git %v failed: %v\n%s", args, err, out)
+			t.Fatalf("git %v failed: %v
+%s", args, err, out)
 		}
 	}
 
@@ -62,13 +54,5 @@ func Setup(t *testing.T, req *Request) error {
 
 	req.Dir = dir
 	return nil
-}
-
-func Run(t *testing.T, req *Request) (*Response, error) {
-	result, err := git.CompareBranches(req.Dir, req.RefA, req.RefB)
-	if err != nil {
-		return nil, err
-	}
-	return &Response{Result: result}, nil
 }
 ```
