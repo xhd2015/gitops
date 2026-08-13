@@ -25,8 +25,6 @@ func FetchAll(dir string, opts *FetchOptions) error {
 		Depth:   depth,
 	})
 
-	// "url=$(git remote get-url origin)",
-	// "if [[ $url = *'/shopee/seamoney-investment/investment-be/txn/service'* ]];then exit 0;fi",
 	_, err := RunCommandsWithOptions(dir, sh.RunBashOptions{
 		Timeout: timeout,
 	}, "git "+sh.Quotes(fetchArgs...))
@@ -57,8 +55,6 @@ func FetchSingle(dir string, origin string, ref string, opts *FetchOptions) erro
 		Depth:   depth,
 	})
 
-	// "url=$(git remote get-url origin)",
-	// "if [[ $url = *'/shopee/seamoney-investment/investment-be/txn/service'* ]];then exit 0;fi",
 	_, err := RunCommandsWithOptions(dir, sh.RunBashOptions{
 		Timeout: timeout,
 	}, "git "+sh.Quotes(fetchArgs...))

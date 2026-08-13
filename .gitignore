@@ -2,6 +2,9 @@
 .vscode
 .DS_Store
 
-
 *.bin
 /vendor
+
+# doctest runtime: injected ReposRoot + seeded file:// remotes
+repos/tests/**/.repos/
+repos/tests/**/fixture/
