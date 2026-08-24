@@ -152,6 +152,19 @@ func TestEnsureStaticBareCommitsUnshallowLeavesWorktreeTipUsable(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(wt, "feature.txt")); err != nil {
 		t.Fatalf("expected feature.txt: %v", err)
 	}
+
+	// Full-blob unshallow must not leave worktrees dependent on the remotes:
+	// point origin at an unreachable URL (GitLab-down class failure) and still
+	// materialize the *other* tip that required connectivity.
+	gitTestRun(t, cacheDir, "remote", "remove", "origin")
+	gitTestRun(t, cacheDir, "remote", "add", "origin", "http://127.0.0.1:1/unreachable.git")
+	wtMaster := filepath.Join(t.TempDir(), "wt-master")
+	if err := AddDetachedWorktree(cacheDir, wtMaster, masterHead); err != nil {
+		t.Fatalf("offline worktree at master after full unshallow: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(wtMaster, "master.txt")); err != nil {
+		t.Fatalf("expected master.txt offline: %v", err)
+	}
 }
 
 func makeStaticCommitsTestRemote(t *testing.T) (remote, featureHead, masterHead string) {

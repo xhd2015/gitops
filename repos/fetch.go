@@ -17,7 +17,8 @@ type URLFetchOptions struct {
 	// NoBlobFilter disables --filter=blob:none on Deepen/Unshallow. Default
 	// (false) applies the filter for history-growth fetches so connectivity
 	// ladders stay small; Depth fetches never use the filter (worktrees need
-	// blobs for the fetched tip).
+	// blobs for the fetched tip). EnsureStaticBareCommits sets this on its
+	// one-shot unshallow so worktree/cat-file do not dial a promisor remote.
 	NoBlobFilter bool
 }
 

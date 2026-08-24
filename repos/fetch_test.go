@@ -36,7 +36,27 @@ func TestBuildURLFetchArgsDepthOmitsBlobNone(t *testing.T) {
 	}
 }
 
-func TestFetchFromURLDeepenFilterConnectsWithoutPullingAllBlobs(t *testing.T) {
+func TestBuildURLFetchArgsUnshallowHonorsNoBlobFilter(t *testing.T) {
+	dir := t.TempDir()
+	gitTestRun(t, "", "init", "--bare", dir)
+	if err := os.WriteFile(filepath.Join(dir, "shallow"), []byte("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	withFilter := buildURLFetchArgs(dir, "https://example/repo.git", URLFetchOptions{Unshallow: true}, true)
+	if !strings.Contains(strings.Join(withFilter, " "), "--filter=blob:none") {
+		t.Fatalf("want blob:none when withBlobNone: %v", withFilter)
+	}
+	noFilter := buildURLFetchArgs(dir, "https://example/repo.git", URLFetchOptions{Unshallow: true, NoBlobFilter: true}, false)
+	joined := strings.Join(noFilter, " ")
+	if strings.Contains(joined, "--filter=") {
+		t.Fatalf("NoBlobFilter must omit --filter: %v", noFilter)
+	}
+	if !strings.Contains(joined, "--unshallow") {
+		t.Fatalf("want --unshallow: %v", noFilter)
+	}
+}
+
+func TestEnsureStaticBareCommitsConnectsAndWorktreeNeedsNoRemote(t *testing.T) {
 	remote, featureHead, masterHead := makeStaticCommitsTestRemote(t)
 	reposRoot := t.TempDir()
 	t.Setenv("HOME", t.TempDir())
@@ -70,10 +90,9 @@ func TestFetchFromURLDeepenFilterConnectsWithoutPullingAllBlobs(t *testing.T) {
 		t.Fatalf("not connected after ensure phase=%s", res.Phase)
 	}
 
-	// Tip trees from the unfiltered depth-1 seed must still materialize for worktrees.
 	wt := filepath.Join(t.TempDir(), "wt")
 	if err := AddDetachedWorktree(cacheDir, wt, featureHead); err != nil {
-		t.Fatalf("worktree after filtered deepen: %v", err)
+		t.Fatalf("worktree after ensure: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(wt, "feature.txt")); err != nil {
 		t.Fatalf("expected feature.txt in worktree: %v", err)
