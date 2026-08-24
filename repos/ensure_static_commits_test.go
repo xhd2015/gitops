@@ -90,7 +90,7 @@ func TestEnsureStaticBareCommitsRecheckSkipsAfterPeerConnected(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Cold: missing SHAs + deepen.
+	// Cold: missing SHAs + unshallow when histories need linking.
 	first, err := EnsureStaticBareCommits(context.Background(), cacheDir, []string{featureHead, masterHead}, EnsureStaticBareCommitsOptions{
 		CloneURL:        cloneURL,
 		Primary:         featureHead,
@@ -99,15 +99,18 @@ func TestEnsureStaticBareCommitsRecheckSkipsAfterPeerConnected(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first.Phase == "fetch_commits" {
-		// May be deepen_* or connected; fetch_commits alone is wrong if others needed history.
-		ok, _ := TargetedHistoryConnected(context.Background(), cacheDir, featureHead, masterHead)
-		if !ok {
-			t.Fatalf("first phase=%s but not connected", first.Phase)
-		}
+	ok, err := TargetedHistoryConnected(context.Background(), cacheDir, featureHead, masterHead)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatalf("first phase=%s but not connected", first.Phase)
+	}
+	if first.Phase != "unshallow" && first.Phase != "connected" {
+		t.Fatalf("first phase=%s want unshallow|connected", first.Phase)
 	}
 
-	// Warm: should recheck under lock and return connected without error.
+	// Warm: already linked → connected without network climb.
 	second, err := EnsureStaticBareCommits(context.Background(), cacheDir, []string{featureHead, masterHead}, EnsureStaticBareCommitsOptions{
 		CloneURL:        cloneURL,
 		Primary:         featureHead,
@@ -118,6 +121,36 @@ func TestEnsureStaticBareCommitsRecheckSkipsAfterPeerConnected(t *testing.T) {
 	}
 	if second.Phase != "connected" {
 		t.Fatalf("warm phase=%s want connected", second.Phase)
+	}
+}
+
+func TestEnsureStaticBareCommitsUnshallowLeavesWorktreeTipUsable(t *testing.T) {
+	remote, featureHead, masterHead := makeStaticCommitsTestRemote(t)
+	reposRoot := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+	cloneURL := "file://" + filepath.ToSlash(remote)
+
+	cacheDir, err := EnsureStaticBareCache(context.Background(), cloneURL, BareCacheOptions{
+		Depth:     1,
+		ReposRoot: reposRoot,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = EnsureStaticBareCommits(context.Background(), cacheDir, []string{featureHead, masterHead}, EnsureStaticBareCommitsOptions{
+		CloneURL:        cloneURL,
+		Primary:         featureHead,
+		EnsureConnected: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wt := filepath.Join(t.TempDir(), "wt")
+	if err := AddDetachedWorktree(cacheDir, wt, featureHead); err != nil {
+		t.Fatalf("worktree after unshallow: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(wt, "feature.txt")); err != nil {
+		t.Fatalf("expected feature.txt: %v", err)
 	}
 }
 
