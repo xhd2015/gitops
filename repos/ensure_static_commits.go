@@ -111,6 +111,7 @@ func EnsureStaticBareCommits(ctx context.Context, cacheDir string, commitIDs []s
 	}
 
 	// Progressive history growth under the same flock (no unlock between steps).
+	// FetchFromURL applies --filter=blob:none on deepen/unshallow by default.
 	for _, p := range staticConnectivityPhases {
 		if ctx.Err() != nil {
 			result.Phase = p.name

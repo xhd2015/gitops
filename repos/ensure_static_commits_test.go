@@ -157,5 +157,7 @@ func makeStaticCommitsTestRemote(t *testing.T) (remote, featureHead, masterHead 
 
 	gitTestRun(t, "", "clone", "--bare", work, remote)
 	gitTestRun(t, remote, "config", "uploadpack.allowAnySHA1InWant", "true")
+	// Connectivity deepen uses --filter=blob:none; allow it on the test remote.
+	gitTestRun(t, remote, "config", "uploadpack.allowFilter", "true")
 	return remote, featureHead, masterHead
 }
