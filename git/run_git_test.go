@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestRunGit_InjectionRefDoesNotExecuteShell(t *testing.T) {
@@ -62,6 +63,23 @@ func TestListCommits_UsesRefArgNotLiteral(t *testing.T) {
 	}
 	if commits[0].Hash == "" {
 		t.Fatal("empty commit hash")
+	}
+}
+
+func TestFetchSingle_InjectionRefDoesNotExecuteShell(t *testing.T) {
+	dir := t.TempDir()
+	initGitRepo(t, dir)
+	// Non-existent remote: fetch fails fast; argv must still not eval shell metachars.
+	run(t, dir, "git", "remote", "add", "origin", filepath.Join(dir, "no-such-remote.git"))
+
+	marker := filepath.Join(dir, "PWNED_FETCH")
+	payload := "master|touch " + marker
+	err := FetchSingle(dir, "origin", payload, &FetchOptions{Timeout: 3 * time.Second})
+	if err == nil {
+		t.Fatalf("expected fetch error for injected ref")
+	}
+	if _, statErr := os.Stat(marker); !os.IsNotExist(statErr) {
+		t.Fatalf("shell metacharacters were evaluated; marker exists: %v", marker)
 	}
 }
 
