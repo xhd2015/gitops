@@ -33,6 +33,31 @@ func TestCatFile(t *testing.T) {
 			},
 			wantOk: false,
 		},
+		{
+			name: "working file ok",
+			args: args{
+				ref:  COMMIT_WORKING,
+				file: "README.md",
+			},
+			wantOk:      true,
+			wantContent: "test",
+		},
+		{
+			name: "working path escape",
+			args: args{
+				ref:  COMMIT_WORKING,
+				file: "../secret.txt",
+			},
+			wantErr: true,
+		},
+		{
+			name: "abs path rejected",
+			args: args{
+				ref:  COMMIT_WORKING,
+				file: "/etc/passwd",
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
