@@ -13,7 +13,8 @@ git restore --staged -> removes from index only -> working copy unchanged
 ## Preconditions
 
 - `git` is available in PATH
-- `dir` is a git repository with an initial commit (required so `git restore --staged` can distinguish staged from committed content)
+- Default `dir` is a git repository with an initial commit (so `git restore --staged` can distinguish staged from committed content).
+- `unborn-init/` overwrites `req.Dir` with a just-`git init` repo (no commits).
 
 ## Steps
 
@@ -25,7 +26,7 @@ git restore --staged -> removes from index only -> working copy unchanged
 
 - Go module: `github.com/xhd2015/gitops`
 - Package under test: `gitwrite`
-- `RestoreStaged(dir, paths...)` runs `git restore --staged -- <paths>` in `dir`.
+- `RestoreStaged(dir, paths...)` unstages paths in `dir`: `git restore --staged` when HEAD exists, `git rm --cached` on unborn HEAD.
 
 ```go
 import (
@@ -72,6 +73,25 @@ func stageFile(dir string, name string, content string) error {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+func initUnbornRepo(t *testing.T) (string, error) {
+	t.Helper()
+	dir, err := os.MkdirTemp("", "gittest-unborn")
+	if err != nil {
+		return "", err
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	if err := exec.Command("git", "-C", dir, "init").Run(); err != nil {
+		return "", err
+	}
+	if err := exec.Command("git", "-C", dir, "config", "user.email", "test@example.com").Run(); err != nil {
+		return "", err
+	}
+	if err := exec.Command("git", "-C", dir, "config", "user.name", "Test User").Run(); err != nil {
+		return "", err
+	}
+	return dir, nil
 }
 
 func getStagedFileNames(dir string) ([]string, error) {

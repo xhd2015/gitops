@@ -2,7 +2,7 @@
 
 ## Version
 
-0.0.2
+0.0.3
 
 Run with:
 ```sh
@@ -12,9 +12,9 @@ doctest test ./ -v
 ## DSN (Domain Specific Notion)
 
 The **caller** hands `RestoreStaged(dir, paths...)` a directory inside a git work tree
-and one or more file paths. The **helper** runs `git restore --staged -- <paths>` in
-`dir`, removing those paths from the git index (staging area) while leaving the
-working copy untouched.
+and one or more file paths. The **helper** removes those paths from the git index
+while leaving the working copy untouched: `git restore --staged` when HEAD exists,
+`git rm --cached` on unborn HEAD (no commit to restore from).
 
 ## Decision Tree
 
@@ -25,7 +25,8 @@ verifies only the specified files are affected.
 RestoreStaged(dir, paths...)
 ├── single-file/        # unstage one file, verify gone from index, file still on disk
 ├── multiple-files/     # unstage two files, verify both gone
-└── partial-subset/     # unstage one of two staged files, verify only that one is gone
+├── partial-subset/     # unstage one of two staged files, verify only that one is gone
+└── unborn-init/        # git init only: unstage drop.bin, keep.txt stays staged
 ```
 
 ## Test Case Index
@@ -35,6 +36,7 @@ RestoreStaged(dir, paths...)
 | 1 | `single-file/` | `a.txt` staged | `a.txt` not staged, `a.txt` still on disk |
 | 2 | `multiple-files/` | `a.txt` and `b.txt` staged | both not staged, both still on disk |
 | 3 | `partial-subset/` | `a.txt` and `b.txt` staged, restore only `a.txt` | `a.txt` not staged, `b.txt` still staged, both on disk |
+| 4 | `unborn-init/` | no commits; `drop.bin` + `keep.txt` staged, restore `drop.bin` | `drop.bin` unstaged (on disk), `keep.txt` still staged |
 
 ## How to Run
 
