@@ -29,6 +29,12 @@ func acquireRepoLockContext(ctx context.Context, cacheDir string) (*repoLock, er
 // non-blocking acquire as a near-zero wait).
 func acquireRepoLockContextTimed(ctx context.Context, cacheDir string) (*repoLock, time.Duration, error) {
 	start := time.Now()
+	parentCtx := ctx
+	if err := parentCtx.Err(); err != nil {
+		return nil, 0, err
+	}
+	ctx, cancel, bounded := lockWaitContext(ctx)
+	defer cancel()
 	if err := os.MkdirAll(filepath.Dir(cacheDir), 0o755); err != nil {
 		return nil, time.Since(start), fmt.Errorf("create cache parent dir: %w", err)
 	}
@@ -53,6 +59,12 @@ func acquireRepoLockContextTimed(ctx context.Context, cacheDir string) (*repoLoc
 				<-timer.C
 			}
 			_ = f.Close()
+			if err := parentCtx.Err(); err != nil {
+				return nil, time.Since(start), fmt.Errorf("acquire repo lock: %w", err)
+			}
+			if bounded {
+				return nil, time.Since(start), ErrRepoBusy
+			}
 			return nil, time.Since(start), fmt.Errorf("acquire repo lock: %w", ctx.Err())
 		case <-timer.C:
 		}

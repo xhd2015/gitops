@@ -7,14 +7,23 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"time"
 )
+
+// Legacy helpers also have a finite lifetime. Explicit callers can supply a
+// shorter deadline; no Git subprocess is allowed to outlive cancellation.
+const defaultGitTimeout = 5 * time.Minute
+
+// RunGitContext executes a local repository operation with bounded process-tree
+// ownership. It does not add authentication or bypass repository access checks.
+func RunGitContext(ctx context.Context, dir string, args ...string) error {
+	return runGitWithEnvContext(ctx, dir, nil, nil, args...)
+}
 
 func runGit(dir string, auth *GitAuthConfig, args ...string) error {
 	return runGitWithEnv(dir, auth, nil, args...)
 }
 
-// runGitWithEnv runs git and, on failure, attaches CombinedOutput (stdout+stderr)
-// so callers surface fatal/invalid-ref diagnostics instead of bare exit status.
 func runGitWithEnv(dir string, auth *GitAuthConfig, env map[string]string, args ...string) error {
 	return runGitWithEnvContext(context.Background(), dir, auth, env, args...)
 }
@@ -30,62 +39,58 @@ func gitOutputWithEnvContext(ctx context.Context, dir string, auth *GitAuthConfi
 }
 
 func gitOutputBytesWithEnvContext(ctx context.Context, dir string, auth *GitAuthConfig, env map[string]string, args ...string) ([]byte, error) {
-	command := exec.CommandContext(ctx, "git", auth.gitArgs(args...)...)
-	command.Dir = dir
-	if len(env) > 0 {
-		command.Env = MergeGitEnv(env, nil)
+	var output bytes.Buffer
+	command := gitCommand(dir, auth, env, args...)
+	command.Stdout = &output
+	command.Stderr = &output
+	if err := runGitCommand(ctx, command); err != nil {
+		// auth arguments are never included in the printable command.
+		return nil, fmt.Errorf("git %s in %s: %w\n%s", strings.Join(args, " "), dir, err, auth.maskError(fmt.Errorf("%s", output.Bytes())))
 	}
-	out, err := command.CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("git %s in %s: %w\n%s", strings.Join(args, " "), dir, err, out)
-	}
-	return out, nil
+	return output.Bytes(), nil
 }
 
 func gitStdoutWithEnvContext(ctx context.Context, dir string, auth *GitAuthConfig, env map[string]string, args ...string) ([]byte, error) {
-	command := exec.CommandContext(ctx, "git", auth.gitArgs(args...)...)
-	command.Dir = dir
-	if len(env) > 0 {
-		command.Env = MergeGitEnv(env, nil)
-	}
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
+	var stdout, stderr bytes.Buffer
+	command := gitCommand(dir, auth, env, args...)
 	command.Stdout = &stdout
 	command.Stderr = &stderr
-	if err := command.Run(); err != nil {
-		return nil, fmt.Errorf("git %s in %s: %w\n%s", strings.Join(args, " "), dir, err, stderr.Bytes())
+	if err := runGitCommand(ctx, command); err != nil {
+		return nil, fmt.Errorf("git %s in %s: %w\n%s", strings.Join(args, " "), dir, err, auth.maskError(fmt.Errorf("%s", stderr.Bytes())))
 	}
 	return stdout.Bytes(), nil
 }
 
-// runGitStreamStderr runs git with stdout+stderr attached to w so progress
-// (e.g. fetch --progress) appears live. Does not use CombinedOutput.
 func runGitStreamStderr(ctx context.Context, dir string, auth *GitAuthConfig, env map[string]string, w io.Writer, args ...string) error {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	command := exec.CommandContext(ctx, "git", auth.gitArgs(args...)...)
-	command.Dir = dir
-	if len(env) > 0 {
-		command.Env = MergeGitEnv(env, nil)
-	}
 	if w == nil {
 		w = io.Discard
 	}
-	command.Stdout = w
-	command.Stderr = w
-	if err := command.Run(); err != nil {
+	command := gitCommand(dir, auth, env, args...)
+	command.Stdout, command.Stderr = w, w
+	if err := runGitCommand(ctx, command); err != nil {
 		return fmt.Errorf("git %s in %s: %w", strings.Join(args, " "), dir, err)
 	}
 	return nil
 }
 
-func gitOutput(dir string, args ...string) (string, error) {
-	command := exec.Command("git", args...)
+func gitCommand(dir string, auth *GitAuthConfig, env map[string]string, args ...string) *exec.Cmd {
+	command := exec.Command("git", auth.gitArgs(args...)...)
 	command.Dir = dir
-	out, err := command.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("git %s in %s: %w\n%s", strings.Join(args, " "), dir, err, out)
+	if len(env) > 0 {
+		command.Env = MergeGitEnv(env, nil)
 	}
-	return strings.TrimSpace(string(out)), nil
+	return command
+}
+
+func runGitCommand(ctx context.Context, command *exec.Cmd) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(ctx, defaultGitTimeout)
+	defer cancel()
+	return runCommandTree(ctx, command)
+}
+
+func gitOutput(dir string, args ...string) (string, error) {
+	return gitOutputWithEnvContext(context.Background(), dir, nil, nil, args...)
 }

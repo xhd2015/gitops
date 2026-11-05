@@ -200,6 +200,13 @@ func clearStaleWorktree(cacheDir, worktreeDir string) {
 // exists" races for that private path, succeeds if .git is present, else
 // clears and retries once. Does not implement refcount shared-path reuse.
 func AddDetachedWorktree(cacheDir, worktreeDir, ref string) error {
+	return AddDetachedWorktreeContext(context.Background(), cacheDir, worktreeDir, ref)
+}
+
+func AddDetachedWorktreeContext(ctx context.Context, cacheDir, worktreeDir, ref string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(worktreeDir), 0o755); err != nil {
 		return fmt.Errorf("create worktree parent dir: %w", err)
 	}
@@ -215,7 +222,7 @@ func AddDetachedWorktree(cacheDir, worktreeDir, ref string) error {
 		clearStaleWorktree(cacheDir, worktreeDir)
 	}
 
-	if err := runGit(cacheDir, nil, "worktree", "add", "-f", "--detach", worktreeDir, ref); err != nil {
+	if err := runGitWithEnvContext(ctx, cacheDir, nil, nil, "worktree", "add", "-f", "--detach", worktreeDir, ref); err != nil {
 		if !isRecoverableWorktreeAddErr(err) {
 			return fmt.Errorf("add detached worktree: %w", err)
 		}
@@ -227,7 +234,7 @@ func AddDetachedWorktree(cacheDir, worktreeDir, ref string) error {
 		if _, statErr := os.Stat(gitMarker); statErr == nil {
 			return nil
 		}
-		if retryErr := runGit(cacheDir, nil, "worktree", "add", "-f", "--detach", worktreeDir, ref); retryErr != nil {
+		if retryErr := runGitWithEnvContext(ctx, cacheDir, nil, nil, "worktree", "add", "-f", "--detach", worktreeDir, ref); retryErr != nil {
 			if _, statErr := os.Stat(gitMarker); statErr == nil {
 				return nil
 			}
@@ -241,6 +248,13 @@ func AddDetachedWorktree(cacheDir, worktreeDir, ref string) error {
 // AddSparseDetachedWorktree creates a detached worktree with non-cone
 // sparse-checkout of paths (empty paths are allowed). Does not use --cone.
 func AddSparseDetachedWorktree(cacheDir, worktreeDir, sha string, paths []string) error {
+	return AddSparseDetachedWorktreeContext(context.Background(), cacheDir, worktreeDir, sha, paths)
+}
+
+func AddSparseDetachedWorktreeContext(ctx context.Context, cacheDir, worktreeDir, sha string, paths []string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(worktreeDir), 0o755); err != nil {
 		return fmt.Errorf("create worktree parent dir: %w", err)
 	}
@@ -249,7 +263,7 @@ func AddSparseDetachedWorktree(cacheDir, worktreeDir, sha string, paths []string
 		clearStaleWorktree(cacheDir, worktreeDir)
 	}
 
-	if err := runGit(cacheDir, nil, "worktree", "add", "--no-checkout", "-f", "--detach", worktreeDir, sha); err != nil {
+	if err := runGitWithEnvContext(ctx, cacheDir, nil, nil, "worktree", "add", "--no-checkout", "-f", "--detach", worktreeDir, sha); err != nil {
 		return fmt.Errorf("add sparse detached worktree: %w", err)
 	}
 	if err := runGit(worktreeDir, nil, "sparse-checkout", "init", "--no-cone"); err != nil {
